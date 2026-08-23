@@ -38,7 +38,7 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M32 41v10M24 55h16l-3-4H27z" />
     </>
   ),
-  téléviseur: (
+  televiseur: (
     <>
       <rect x="7" y="11" width="50" height="33" rx="4" />
       <path d="M26 51h12M32 44v7" />

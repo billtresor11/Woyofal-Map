@@ -74,7 +74,7 @@ const QUANTITY_ATTRIBUTE = (label: string, emoji: string): ApplianceAttribute =>
 const EVENING_PROFILES: UsageProfile[] = [
   profile('leger', 'De temps en temps', '🌤️', 2, 5, 'Environ 2h, quelques jours'),
   profile('soir', 'Tous les soirs', '🌙', 5, 7, 'La soirée en famille'),
-  profile('journée', 'Une bonne partie de la journée', '☀️', 10, 7),
+  profile('journee', 'Une bonne partie de la journée', '☀️', 10, 7),
   profile('permanent', 'Presque tout le temps', '🔁', 16, 7),
 ];
 
@@ -104,7 +104,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
           { id: 'petit', label: 'Petit', hint: 'Environ 150 litres', emoji: '🧃', watts: 95 },
           { id: 'moyen', label: 'Moyen', hint: 'Environ 200 à 250 litres', emoji: '🧊', watts: 125 },
           { id: 'grand', label: 'Grand', hint: 'Environ 350 litres, 2 portes', emoji: '🚪', watts: 165 },
-          { id: 'américain', label: 'Très grand', hint: 'Type américain, 500 litres et plus', emoji: '🏔️', watts: 230 },
+          { id: 'americain', label: 'Très grand', hint: 'Type américain, 500 litres et plus', emoji: '🏔️', watts: 230 },
         ],
       },
       AGE_ATTRIBUTE,
@@ -192,7 +192,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         ],
       },
       {
-        key: 'réglage',
+        key: 'reglage',
         label: 'Réglage',
         question: 'Vous le réglez à combien ?',
         emoji: '🌡️',
@@ -252,7 +252,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
 
   // ------------------------------------------------------------------ SALON
   {
-    id: 'téléviseur',
+    id: 'televiseur',
     name: 'Téléviseur',
     category: 'salon',
     emoji: '📺',
@@ -332,7 +332,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     defaultUsageProfileId: 'leger',
     attributes: [
       {
-        key: 'modèle',
+        key: 'modele',
         label: 'Modèle',
         question: 'Quelle console ?',
         emoji: '🕹️',
@@ -532,12 +532,12 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         defaultOptionId: 'froid',
         options: [
           { id: 'froid', label: 'A froid', hint: 'Le plus économique', emoji: '❄️', watts: 400 },
-          { id: 'tiède', label: 'Tiede, 40 degrés', emoji: '🌤️', watts: 1100 },
+          { id: 'tiede', label: 'Tiede, 40 degrés', emoji: '🌤️', watts: 1100 },
           { id: 'chaud', label: 'Chaud, 60 degrés et plus', emoji: '🔥', watts: 1800 },
         ],
       },
       {
-        key: 'séchage',
+        key: 'sechage',
         label: 'Séchage',
         question: 'Utilisez-vous le sèche-linge ?',
         emoji: '🌀',
@@ -734,7 +734,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         options: [
           { id: 'led', label: 'LED', hint: 'Les modernes, très économiques', emoji: '✨', watts: 9 },
           { id: 'eco', label: 'Basse consommation', hint: 'En spirale', emoji: '🌀', watts: 20 },
-          { id: 'néon', label: 'Néon / tube', emoji: '📏', watts: 40 },
+          { id: 'neon', label: 'Néon / tube', emoji: '📏', watts: 40 },
           { id: 'filament', label: 'Ancienne à filament', hint: 'Elle chauffe beaucoup', emoji: '🔥', watts: 75 },
         ],
       },
@@ -781,7 +781,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         defaultOptionId: 'ballon',
         options: [
           { id: 'ballon', label: 'Ballon (cumulus)', hint: 'Il chauffe et garde l’eau', emoji: '🛢️', watts: 1500, dutyCycle: 0.18 },
-          { id: 'instantané', label: 'Chauffe-eau instantané', hint: 'Il chauffe au moment de la douche', emoji: '⚡', watts: 3500, dutyCycle: 0.04 },
+          { id: 'instantane', label: 'Chauffe-eau instantané', hint: 'Il chauffe au moment de la douche', emoji: '⚡', watts: 3500, dutyCycle: 0.04 },
         ],
       },
       {

@@ -83,7 +83,7 @@ export interface PunctualEstimate {
   pricePerKwh: number;
   tierLabel: string;
   durationMinutes: number;
-  équivalents: CostEquivalent[];
+  equivalents: CostEquivalent[];
   /** Même session repetee tous les jours pendant un mois. */
   monthlyIfDaily: number;
 }
@@ -108,7 +108,7 @@ export function estimatePunctual(
     pricePerKwh: bill.averagePricePerKwh,
     tierLabel: bill.currentTier.label,
     durationMinutes,
-    équivalents: costEquivalents(bill.totalTTC),
+    equivalents: costEquivalents(bill.totalTTC),
     monthlyIfDaily: dailyMonth.totalTTC,
   };
 }

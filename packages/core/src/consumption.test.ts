@@ -13,6 +13,28 @@ describe('catalogue', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  /**
+   * Garde-fou : les identifiants techniques circulent en base, dans les URL et
+   * dans les clés d'illustrations. Un accent qui s'y glisse casse silencieusement
+   * une correspondance ailleurs dans le produit.
+   */
+  it('n’utilise que des identifiants techniques en ASCII', () => {
+    const ascii = /^[a-z0-9_]+$/;
+    for (const template of APPLIANCE_TEMPLATES) {
+      expect(template.id, `template ${template.id}`).toMatch(ascii);
+      expect(template.category, `catégorie de ${template.id}`).toMatch(ascii);
+      for (const attribute of template.attributes) {
+        expect(attribute.key, `${template.id}.${attribute.key}`).toMatch(ascii);
+        for (const option of attribute.options) {
+          expect(option.id, `${template.id}.${attribute.key}.${option.id}`).toMatch(ascii);
+        }
+      }
+      for (const profile of template.usageProfiles ?? []) {
+        expect(profile.id, `${template.id}.${profile.id}`).toMatch(ascii);
+      }
+    }
+  });
+
   it('propose une option par défaut valide pour chaque caractéristique', () => {
     for (const template of APPLIANCE_TEMPLATES) {
       for (const attribute of template.attributes) {
@@ -92,7 +114,7 @@ describe('déduction de consommation', () => {
   it('calcule une session ponctuelle de 3h de PlayStation', () => {
     const console = getTemplate('console_jeu');
     const base = defaultSelection(console);
-    const kwh = computePunctualKwh(console, { ...base, options: { modèle: 'ps5' } }, 180);
+    const kwh = computePunctualKwh(console, { ...base, options: { modele: 'ps5' } }, 180);
     // 210 W x 3 h = 0,63 kWh
     expect(kwh).toBeCloseTo(0.63, 2);
   });
@@ -100,7 +122,7 @@ describe('déduction de consommation', () => {
 
 describe('totaux du foyer', () => {
   it('isole les appareils qui tournent 24h/24', () => {
-    const items = ['refrigerateur', 'box_internet', 'téléviseur'].map((id) => {
+    const items = ['refrigerateur', 'box_internet', 'televiseur'].map((id) => {
       const template = getTemplate(id);
       return computeConsumption(template, defaultSelection(template));
     });

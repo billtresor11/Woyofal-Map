@@ -17,6 +17,7 @@
     "build:core": "npm run -w @woyofal/core build",
     "dev": "npm run build:core && concurrently -n API,WEB -c green,cyan \"npm run -w @woyofal/api dev\" \"npm run -w @woyofal/web dev\"",
     "build": "npm run -w @woyofal/core build && npm run -w @woyofal/api build && npm run -w @woyofal/web build",
+    "build:demo": "node scripts/build-demo.mjs",
     "start": "npm run -w @woyofal/api start",
     "test": "npm run -w @woyofal/core test",
     "typecheck": "npm run -w @woyofal/core typecheck && npm run -w @woyofal/api typecheck && npm run -w @woyofal/web typecheck",

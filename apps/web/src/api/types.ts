@@ -91,7 +91,7 @@ export interface Summary {
     kwhToNextTier: number | null;
   };
   ranking: ApplianceCost[];
-  équivalents: CostEquivalent[];
+  equivalents: CostEquivalent[];
   alwaysOn: {
     kwhPerMonth: number;
     amountPerMonth: number;

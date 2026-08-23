@@ -92,7 +92,7 @@ describe('répartition de la facture', () => {
       members,
       appliances: [
         appliance('1', 'refrigerateur', 'SHARED'),
-        appliance('2', 'téléviseur', 'SHARED'),
+        appliance('2', 'televiseur', 'SHARED'),
         appliance('3', 'climatiseur', 'PRIVATE', 'a'),
         appliance('4', 'ordinateur', 'PRIVATE', 'b'),
         appliance('5', 'ampoules', 'SHARED'),

@@ -119,16 +119,16 @@ async function seedDemoHousehold() {
     roomId?: string | null;
   }> = [
     { templateId: 'refrigerateur', options: { taille: 'moyen', etat: 'moyen' }, ownership: 'SHARED', roomId: salon?.id },
-    { templateId: 'téléviseur', options: { taille: 'p43' }, usageProfileId: 'soir', ownership: 'SHARED', roomId: salon?.id },
+    { templateId: 'televiseur', options: { taille: 'p43' }, usageProfileId: 'soir', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'decodeur', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'box_internet', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'ampoules', options: { type: 'led', nombre: 'q8' }, usageProfileId: 'soir', ownership: 'SHARED' },
     { templateId: 'ventilateur', options: { type: 'pied', nombre: 'q2' }, usageProfileId: 'nuit', ownership: 'SHARED' },
     { templateId: 'fer_repasser', usageProfileId: 'hebdo', ownership: 'SHARED' },
-    { templateId: 'machine_laver', options: { programme: 'froid', séchage: 'non' }, usageProfileId: 'deux', ownership: 'SHARED' },
+    { templateId: 'machine_laver', options: { programme: 'froid', sechage: 'non' }, usageProfileId: 'deux', ownership: 'SHARED' },
     {
       templateId: 'climatiseur',
-      options: { puissance: 'cv1_5', techno: 'classique', réglage: 'moyen' },
+      options: { puissance: 'cv1_5', techno: 'classique', reglage: 'moyen' },
       usageProfileId: 'nuit',
       ownership: 'PRIVATE',
       ownerId: awa?.id,

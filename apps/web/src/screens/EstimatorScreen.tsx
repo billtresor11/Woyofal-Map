@@ -160,11 +160,11 @@ function ActionEstimator() {
             <p className="mt-1 text-sm font-bold text-white/80">
               {fmtKwh(result.estimate.kwh)} · {result.estimate.tierLabel}
             </p>
-            {result.estimate.équivalents.length > 0 ? (
+            {result.estimate.equivalents.length > 0 ? (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {result.estimate.équivalents.map((équivalent) => (
-                  <span key={équivalent.label} className="chip bg-white/15 text-white">
-                    {équivalent.emoji} {équivalent.count} {équivalent.label}
+                {result.estimate.equivalents.map((equivalent) => (
+                  <span key={equivalent.label} className="chip bg-white/15 text-white">
+                    {equivalent.emoji} {equivalent.count} {equivalent.label}
                   </span>
                 ))}
               </div>

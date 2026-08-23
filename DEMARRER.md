@@ -5,6 +5,12 @@ dont 8 d'attente pendant que l'ordinateur travaille tout seul.
 
 Vous n'avez rien à comprendre, juste à recopier une ligne.
 
+> 💡 **Vous voulez seulement voir l'application, pas l'installer ?**
+> Ouvrez le fichier **`demo/woyofal-map-demo.html`** dans votre navigateur (double-clic).
+> Tout fonctionne : inventaire, estimations, répartition. Aucune installation, aucune
+> commande. Ce guide ne sert que si vous voulez la version complète, avec serveur et base
+> de données partagée entre plusieurs téléphones.
+
 ---
 
 ## Étape 1 — Installer Node.js (une seule fois dans votre vie)

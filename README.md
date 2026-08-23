@@ -19,7 +19,21 @@ appliquant discrètement les tranches tarifaires de la Senelec.
 
 ---
 
-## Démarrage
+## Essayer sans rien installer
+
+Le fichier **`demo/woyofal-map-demo.html`** contient l'application entière — calculs
+compris — dans un seul fichier. Ouvrez-le dans n'importe quel navigateur : pas de Node.js,
+pas de serveur, pas de base de données. Il fonctionne même hors ligne, et vos données
+restent dans votre navigateur.
+
+C'est la bonne façon de **montrer** le produit. Pour l'utiliser à plusieurs (un foyer
+partagé entre plusieurs téléphones), il faut la version serveur ci-dessous.
+
+```bash
+npm run build:demo    # régénère demo/woyofal-map-demo.html
+```
+
+## Démarrage de la version complète
 
 > 🚀 **Vous n'êtes pas développeur ?** Suivez le guide pas à pas **[DEMARRER.md](DEMARRER.md)** :
 > une seule commande à recopier, 10 minutes, tout est expliqué.

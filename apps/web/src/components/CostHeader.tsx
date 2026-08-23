@@ -8,7 +8,7 @@ import { fcfa, kwh as fmtKwh, tierColor } from '../lib/format.js';
  * elles se lisent comme un jeu de couleurs.
  */
 export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpenTariff?: () => void }) {
-  const { bill, gauge, totals, équivalents, budget, dailyAmount } = summary;
+  const { bill, gauge, totals, equivalents, budget, dailyAmount } = summary;
   const tiers = gauge.segments.map((segment) => segment.tier);
   const scale = gauge.scaleKwh;
   const fillRatio = Math.min(1, totals.kwhPerMonth / scale);
@@ -35,11 +35,11 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
         </button>
       </div>
 
-      {équivalents.length > 0 ? (
+      {equivalents.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {équivalents.map((équivalent) => (
-            <span key={équivalent.label} className="chip bg-white/15 text-white">
-              {équivalent.emoji} {équivalent.count} {équivalent.label}
+          {equivalents.map((equivalent) => (
+            <span key={equivalent.label} className="chip bg-white/15 text-white">
+              {equivalent.emoji} {equivalent.count} {equivalent.label}
             </span>
           ))}
         </div>

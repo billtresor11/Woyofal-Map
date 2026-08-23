@@ -232,7 +232,7 @@ export async function buildSummary(householdId: string, month = currentMonth()) 
     bill,
     gauge,
     ranking,
-    équivalents: costEquivalents(bill.totalTTC),
+    equivalents: costEquivalents(bill.totalTTC),
     alwaysOn: {
       kwhPerMonth: totals.alwaysOnKwhPerMonth,
       amountPerMonth: alwaysOnAmount,
