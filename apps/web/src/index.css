@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-sand-50 text-ink font-sans antialiased;
+    /* L application est pensee pour le telephone : on evite le zoom accidentel. */
+    touch-action: manipulation;
+  }
+  * {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  input,
+  textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-3xl bg-white shadow-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3.5 font-extrabold
+           transition active:scale-[0.97] disabled:opacity-40 disabled:active:scale-100;
+  }
+  .btn-primary {
+    @apply btn bg-teal-500 text-white shadow-pop;
+  }
+  .btn-ghost {
+    @apply btn bg-sand-100 text-ink;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold;
+  }
+  /* Zone tactile confortable : l application vise tous les publics. */
+  .tap {
+    @apply min-h-[48px] transition active:scale-[0.97];
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

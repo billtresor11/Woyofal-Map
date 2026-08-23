@@ -1,0 +1,314 @@
+import {
+  computeConsumption,
+  computeMonthlyBill,
+  costEquivalents,
+  findTemplate,
+  rankAppliances,
+  splitHousehold,
+  sumConsumption,
+  tierProgress,
+  DAYS_PER_MONTH,
+  type ApplianceInput,
+  type ApplianceSelection,
+  type ConsumptionResult,
+  type MemberInput,
+} from '@woyofal/core';
+import { prisma } from '../db.js';
+import { AppError, notFound } from '../errors.js';
+import { loadPlan } from './tariff.service.js';
+
+// --- Utilitaires de date ----------------------------------------------------
+
+export function currentMonth(date = new Date()): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function monthRange(month: string): { start: Date; end: Date; daysElapsed: number; days: number } {
+  const [yearPart, monthPart] = month.split('-');
+  const year = Number(yearPart);
+  const monthIndex = Number(monthPart) - 1;
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex)) {
+    throw new AppError(`Mois invalide : ${month}. Format attendu : AAAA-MM.`);
+  }
+  const start = new Date(year, monthIndex, 1);
+  const end = new Date(year, monthIndex + 1, 1);
+  const days = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+  const now = new Date();
+  const daysElapsed =
+    now >= end ? days : now < start ? 0 : Math.max(1, now.getDate());
+  return { start, end, daysElapsed, days };
+}
+
+// --- Conversion base de donnees <-> moteur ----------------------------------
+
+function parseOptions(json: string): Record<string, string> {
+  try {
+    const parsed = JSON.parse(json);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Recalcule la consommation a partir des choix de l utilisateur.
+ * Le serveur ne fait jamais confiance aux kWh envoyes par le client :
+ * il rejoue le moteur avec le catalogue de reference.
+ */
+export function computeFromSelection(selection: ApplianceSelection): ConsumptionResult {
+  const template = findTemplate(selection.templateId);
+  if (!template) throw notFound(`L appareil "${selection.templateId}"`);
+  return computeConsumption(template, selection);
+}
+
+type ApplianceRow = {
+  id: string;
+  templateId: string;
+  label: string;
+  optionsJson: string;
+  usageProfileId: string | null;
+  quantity: number;
+  ownership: string;
+  ownerId: string | null;
+  roomId: string | null;
+  watts: number;
+  dutyCycle: number;
+  hoursPerDay: number;
+  daysPerWeek: number;
+  alwaysOn: boolean;
+  kwhPerDay: number;
+  kwhPerMonth: number;
+  isActive: boolean;
+  shares?: Array<{ memberId: string; weight: number }>;
+};
+
+function rowToConsumption(row: ApplianceRow): ConsumptionResult {
+  return {
+    templateId: row.templateId,
+    watts: row.watts,
+    quantity: row.quantity,
+    hoursPerDay: row.hoursPerDay,
+    daysPerWeek: row.daysPerWeek,
+    dutyCycle: row.dutyCycle,
+    alwaysOn: row.alwaysOn,
+    kwhPerDay: row.kwhPerDay,
+    kwhPerMonth: row.kwhPerMonth,
+    kwhPerYear: Math.round(row.kwhPerDay * 365.25 * 1000) / 1000,
+    effectiveHoursPerDay:
+      Math.round(row.hoursPerDay * row.dutyCycle * (row.daysPerWeek / 7) * 100) / 100,
+  };
+}
+
+export function rowToApplianceInput(row: ApplianceRow): ApplianceInput {
+  const shares = row.shares?.length
+    ? Object.fromEntries(row.shares.map((s) => [s.memberId, s.weight]))
+    : undefined;
+  return {
+    id: row.id,
+    label: row.label,
+    templateId: row.templateId,
+    ownership: row.ownership === 'PRIVATE' ? 'PRIVATE' : 'SHARED',
+    ownerId: row.ownerId,
+    shares,
+    consumption: rowToConsumption(row),
+  };
+}
+
+/** Vue "appareil" telle que la consomme l interface. */
+export function serializeAppliance(row: ApplianceRow) {
+  const template = findTemplate(row.templateId);
+  const consumption = rowToConsumption(row);
+  return {
+    id: row.id,
+    label: row.label,
+    templateId: row.templateId,
+    templateName: template?.name ?? row.label,
+    emoji: template?.emoji ?? '🔌',
+    category: template?.category ?? 'numerique',
+    options: parseOptions(row.optionsJson),
+    usageProfileId: row.usageProfileId,
+    quantity: row.quantity,
+    ownership: row.ownership,
+    ownerId: row.ownerId,
+    roomId: row.roomId,
+    isActive: row.isActive,
+    alwaysOn: row.alwaysOn,
+    consumption,
+    shares: row.shares ?? [],
+  };
+}
+
+// --- Chargement d un foyer ---------------------------------------------------
+
+export async function getHouseholdOrThrow(householdId: string) {
+  const household = await prisma.household.findUnique({
+    where: { id: householdId },
+    include: {
+      members: { orderBy: { createdAt: 'asc' } },
+      rooms: { orderBy: { name: 'asc' } },
+      appliances: {
+        where: { isActive: true },
+        orderBy: { createdAt: 'desc' },
+        include: { shares: true },
+      },
+    },
+  });
+  if (!household) throw notFound('Ce foyer');
+  return household;
+}
+
+/**
+ * kWh deja consommes dans le mois. On prend le releve reel (recharges Woyofal)
+ * s il existe, sinon on prorate l estimation sur les jours ecoules : c est cette
+ * valeur qui determine la tranche courante, donc le prix marginal du kWh.
+ */
+export async function consumedSoFar(
+  householdId: string,
+  month: string,
+  estimatedKwhPerDay: number,
+): Promise<{ kwh: number; source: 'recharges' | 'estimation' }> {
+  const { start, end, daysElapsed } = monthRange(month);
+  const topUps = await prisma.topUp.aggregate({
+    where: { householdId, purchasedAt: { gte: start, lt: end } },
+    _sum: { kwh: true },
+  });
+  const real = topUps._sum.kwh ?? 0;
+  if (real > 0) return { kwh: Math.round(real * 100) / 100, source: 'recharges' };
+  return {
+    kwh: Math.round(estimatedKwhPerDay * daysElapsed * 100) / 100,
+    source: 'estimation',
+  };
+}
+
+// --- Le tableau de bord ------------------------------------------------------
+
+export async function buildSummary(householdId: string, month = currentMonth()) {
+  const household = await getHouseholdOrThrow(householdId);
+  const plan = await loadPlan(household.tariffCode);
+
+  const applianceInputs = household.appliances.map(rowToApplianceInput);
+  const totals = sumConsumption(applianceInputs.map((a) => a.consumption));
+  const bill = computeMonthlyBill(totals.kwhPerMonth, plan);
+  const gauge = tierProgress(totals.kwhPerMonth, plan);
+  const ranking = rankAppliances(applianceInputs, plan);
+  const soFar = await consumedSoFar(householdId, month, totals.kwhPerDay);
+
+  const alwaysOnBill = computeMonthlyBill(totals.alwaysOnKwhPerMonth, plan, {
+    includeFixedFee: false,
+  });
+  const alwaysOnAmount =
+    totals.kwhPerMonth > 0
+      ? Math.round(
+          ((totals.alwaysOnKwhPerMonth / totals.kwhPerMonth) * (bill.totalTTC - bill.fixedFee)),
+        )
+      : 0;
+
+  const budget = household.monthlyBudget
+    ? {
+        target: household.monthlyBudget,
+        projected: bill.totalTTC,
+        remaining: household.monthlyBudget - bill.totalTTC,
+        status:
+          bill.totalTTC <= household.monthlyBudget * 0.85
+            ? ('ok' as const)
+            : bill.totalTTC <= household.monthlyBudget
+              ? ('warning' as const)
+              : ('over' as const),
+      }
+    : null;
+
+  return {
+    household: {
+      id: household.id,
+      name: household.name,
+      tariffCode: household.tariffCode,
+      meterType: household.meterType,
+      subscribedKva: household.subscribedKva,
+      monthlyBudget: household.monthlyBudget,
+    },
+    month,
+    plan,
+    totals,
+    bill,
+    gauge,
+    ranking,
+    equivalents: costEquivalents(bill.totalTTC),
+    alwaysOn: {
+      kwhPerMonth: totals.alwaysOnKwhPerMonth,
+      amountPerMonth: alwaysOnAmount,
+      sharePercent: totals.alwaysOnSharePercent,
+      count: totals.alwaysOnCount,
+      /** Meme si personne n est a la maison, cette somme part chaque mois. */
+      averagePricePerKwh: alwaysOnBill.averagePricePerKwh,
+      appliances: ranking.filter((item) => item.alwaysOn),
+    },
+    switchable: {
+      kwhPerMonth: totals.switchableKwhPerMonth,
+      amountPerMonth: Math.max(0, bill.totalTTC - bill.fixedFee - alwaysOnAmount),
+      appliances: ranking.filter((item) => !item.alwaysOn),
+    },
+    consumedSoFar: soFar,
+    budget,
+    dailyAmount:
+      totals.kwhPerMonth > 0 ? Math.round((bill.totalTTC - bill.fixedFee) / DAYS_PER_MONTH) : 0,
+    appliances: household.appliances.map(serializeAppliance),
+    members: household.members,
+    rooms: household.rooms,
+  };
+}
+
+// --- Repartition colocation --------------------------------------------------
+
+export async function buildSplit(householdId: string, month = currentMonth()) {
+  const household = await getHouseholdOrThrow(householdId);
+  const plan = await loadPlan(household.tariffCode);
+  const { start, end } = monthRange(month);
+
+  const sessions = await prisma.punctualSession.findMany({
+    where: { householdId, occurredAt: { gte: start, lt: end } },
+    orderBy: { occurredAt: 'desc' },
+  });
+  const topUps = await prisma.topUp.aggregate({
+    where: { householdId, purchasedAt: { gte: start, lt: end } },
+    _sum: { kwh: true, amount: true },
+  });
+
+  const members: MemberInput[] = household.members.map((member) => ({
+    id: member.id,
+    name: member.name,
+    emoji: member.emoji,
+    color: member.color,
+    presenceRatio: member.presenceRatio,
+  }));
+
+  const actualKwh = topUps._sum.kwh && topUps._sum.kwh > 0 ? topUps._sum.kwh : undefined;
+
+  const split = splitHousehold({
+    month,
+    members,
+    appliances: household.appliances.map(rowToApplianceInput),
+    punctualUsages: sessions.map((session) => ({
+      id: session.id,
+      label: session.label,
+      memberId: session.memberId,
+      kwh: session.kwh,
+    })),
+    plan,
+    actualKwh,
+  });
+
+  return {
+    ...split,
+    basis: actualKwh ? ('recharges' as const) : ('estimation' as const),
+    rechargedAmount: topUps._sum.amount ?? 0,
+    sessions: sessions.map((session) => ({
+      id: session.id,
+      label: session.label,
+      memberId: session.memberId,
+      kwh: session.kwh,
+      amount: session.amount,
+      durationMinutes: session.durationMinutes,
+      occurredAt: session.occurredAt,
+    })),
+  };
+}

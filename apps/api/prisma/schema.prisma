@@ -1,0 +1,214 @@
+// ---------------------------------------------------------------------------
+// Woyofal Map - Schema de base de donnees
+// ---------------------------------------------------------------------------
+// SQLite en developpement (zero installation), PostgreSQL en production :
+// il suffit de changer `provider` et `DATABASE_URL`. Aucun type exotique n est
+// utilise pour que la bascule soit sans douleur.
+//
+// Note : SQLite ne gere ni les enums ni le type Json cote Prisma. Les champs
+// concernes sont donc des chaines (avec valeurs documentees) et du JSON encode
+// en texte. En PostgreSQL, ils peuvent devenir des enums / jsonb sans toucher
+// au code applicatif.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// Le foyer : l unite de facturation, rattachee a un compteur.
+model Household {
+  id            String   @id @default(cuid())
+  name          String
+  /// Code de la grille tarifaire appliquee (voir TariffPlan).
+  tariffCode    String   @default("WOYOFAL_DPP")
+  /// PREPAID (Woyofal) | POSTPAID (facture papier)
+  meterType     String   @default("PREPAID")
+  subscribedKva Int      @default(5)
+  /// Objectif de budget mensuel en FCFA, pour l alerte "je vais depasser".
+  monthlyBudget Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  members    Member[]
+  rooms      Room[]
+  appliances Appliance[]
+  sessions   PunctualSession[]
+  topUps     TopUp[]
+}
+
+/// Un membre du foyer (colocataire, parent, enfant).
+model Member {
+  id            String   @id @default(cuid())
+  householdId   String
+  name          String
+  emoji         String   @default("🙂")
+  color         String   @default("#0EA5E9")
+  /// Part de presence sur le mois (0 a 1). 0,5 = absent la moitie du mois.
+  presenceRatio Float    @default(1)
+  createdAt     DateTime @default(now())
+
+  household        Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  ownedAppliances  Appliance[]       @relation("ApplianceOwner")
+  shares           ApplianceShare[]
+  punctualSessions PunctualSession[]
+
+  @@index([householdId])
+}
+
+/// Une piece de la maison : sert a distinguer "salon" (commun) de "chambre" (prive).
+model Room {
+  id          String @id @default(cuid())
+  householdId String
+  name        String
+  emoji       String @default("🚪")
+  /// SHARED (piece commune) | PRIVATE (chambre)
+  kind        String @default("SHARED")
+
+  household  Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  appliances Appliance[]
+
+  @@index([householdId])
+}
+
+/// Miroir en base du catalogue visuel (packages/core/src/catalog.ts).
+/// Permet d ajouter ou de corriger un appareil sans redeployer l application.
+model ApplianceTemplate {
+  id             String  @id
+  name           String
+  category       String
+  emoji          String
+  alwaysOn       Boolean @default(false)
+  basePowerWatts Float
+  dutyCycle      Float   @default(1)
+  /// Caracteristiques et profils d usage, encodes en JSON.
+  definition     String
+  version        Int     @default(1)
+
+  appliances Appliance[]
+}
+
+/// Un appareil reellement possede par un foyer, avec les choix de l utilisateur.
+model Appliance {
+  id          String @id @default(cuid())
+  householdId String
+  templateId  String
+  label       String
+
+  /// Choix de l utilisateur : { "taille": "moyen", "etat": "vieux" }
+  optionsJson   String @default("{}")
+  usageProfileId String?
+  quantity      Int    @default(1)
+
+  /// SHARED (commun a tout le foyer) | PRIVATE (a la charge d une personne)
+  ownership String  @default("SHARED")
+  ownerId   String?
+  roomId    String?
+
+  // --- Resultats du calcul, figes a l enregistrement -----------------------
+  // Denormalises volontairement : les listes et les totaux se lisent sans
+  // rejouer le moteur, et l historique reste stable si le catalogue evolue.
+  watts       Float
+  dutyCycle   Float
+  hoursPerDay Float
+  daysPerWeek Int     @default(7)
+  alwaysOn    Boolean @default(false)
+  kwhPerDay   Float
+  kwhPerMonth Float
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  household Household         @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  template  ApplianceTemplate @relation(fields: [templateId], references: [id])
+  owner     Member?           @relation("ApplianceOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  room      Room?             @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  shares    ApplianceShare[]
+
+  @@index([householdId])
+  @@index([templateId])
+}
+
+/// Ponderation fine d un appareil commun (ex : la clim du salon, utilisee
+/// surtout par deux personnes sur quatre).
+model ApplianceShare {
+  applianceId String
+  memberId    String
+  weight      Float @default(1)
+
+  appliance Appliance @relation(fields: [applianceId], references: [id], onDelete: Cascade)
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([applianceId, memberId])
+}
+
+/// Une utilisation ponctuelle simulee puis enregistree ("3h de PlayStation").
+model PunctualSession {
+  id              String   @id @default(cuid())
+  householdId     String
+  memberId        String?
+  templateId      String
+  label           String
+  optionsJson     String   @default("{}")
+  durationMinutes Int
+  kwh             Float
+  amount          Float
+  occurredAt      DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member    Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, occurredAt])
+}
+
+/// Une recharge Woyofal : permet de comparer l estimation a la realite.
+model TopUp {
+  id          String   @id @default(cuid())
+  householdId String
+  amount      Float
+  kwh         Float
+  purchasedAt DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, purchasedAt])
+}
+
+/// Grille tarifaire Senelec, versionnee et modifiable par l utilisateur.
+model TariffPlan {
+  code              String  @id
+  label             String
+  description       String
+  meterType         String
+  /// 1 = tranches remises a zero chaque mois (Woyofal), 2 = facture bimestrielle.
+  periodMonths      Int     @default(1)
+  minKva            Int     @default(1)
+  maxKva            Int?
+  vatRate           Float   @default(0.18)
+  municipalTaxRate  Float   @default(0)
+  fixedFeePerMonth  Float   @default(0)
+  source            String
+  effectiveFrom     String
+  isCustom          Boolean @default(false)
+
+  tiers TariffTier[]
+}
+
+model TariffTier {
+  id          String  @id @default(cuid())
+  planCode    String
+  position    Int
+  fromKwh     Float
+  toKwh       Float?
+  pricePerKwh Float
+  label       String
+  vatExempt   Boolean @default(false)
+
+  plan TariffPlan @relation(fields: [planCode], references: [code], onDelete: Cascade)
+
+  @@unique([planCode, position])
+}
