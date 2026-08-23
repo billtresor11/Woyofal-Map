@@ -340,7 +340,7 @@ function updateAppliance(id: string, body: Record<string, unknown>) {
   return serializeAppliance(row);
 }
 
-/** Foyer de démonstration : l'application ne doit jamais s'ouvrir vide. */
+/** Foyer de démonstration : l’application ne doit jamais s’ouvrir vide. */
 function seedIfEmpty(): string | null {
   const data = db();
   if (data.households.length > 0) return data.households[0]!.id;

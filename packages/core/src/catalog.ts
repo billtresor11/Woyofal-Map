@@ -67,7 +67,7 @@ const QUANTITY_ATTRIBUTE = (label: string, emoji: string): ApplianceAttribute =>
     { id: 'q2', label: `2 ${label}s`, quantity: 2 },
     { id: 'q3', label: `3 ${label}s`, quantity: 3 },
     { id: 'q5', label: `5 ${label}s`, quantity: 5 },
-    { id: 'q8', label: `8 ${label}s’ou plus`, quantity: 8 },
+    { id: 'q8', label: `8 ${label}s ou plus`, quantity: 8 },
   ],
 });
 

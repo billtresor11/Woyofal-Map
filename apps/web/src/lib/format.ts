@@ -10,9 +10,13 @@ export function fcfaLong(amount: number): string {
 }
 
 export function kwh(value: number): string {
-  if (value >= 100) return `${Math.round(value)} kWh`;
-  if (value >= 10) return `${value.toFixed(1)} kWh`;
-  return `${value.toFixed(2)} kWh`;
+  // Virgule décimale et espace insécable : les conventions françaises.
+  const decimals = value >= 100 ? 0 : value >= 10 ? 1 : 2;
+  const formatted = value.toLocaleString('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+  return `${formatted.replace(/\u202f|\u00a0/g, ' ')} kWh`;
 }
 
 export function duration(minutes: number): string {

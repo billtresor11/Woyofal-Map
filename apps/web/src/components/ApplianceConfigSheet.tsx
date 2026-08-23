@@ -166,7 +166,7 @@ export function ApplianceConfigSheet({
           </p>
           <p className="text-sm font-bold text-ink-soft">
             {preview
-              ? `${fcfa(preview.dailyAmount)} par jour · ${fmtKwh(preview.consumption.kwhPerMonth)}`
+              ? `${fmtKwh(preview.consumption.kwhPerMonth)} par mois · environ ${fcfa(preview.dailyAmount)} par jour`
               : 'Calcul en cours...'}
           </p>
         </div>

@@ -23,7 +23,7 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
             {fcfa(bill.totalTTC)}
           </p>
           <p className="mt-1 text-sm font-bold text-white/80">
-            environ {fcfa(dailyAmount)} par jour · {fmtKwh(totals.kwhPerMonth)}
+            {fmtKwh(totals.kwhPerMonth)} ce mois-ci · environ {fcfa(dailyAmount)} par jour
           </p>
         </div>
         <button
