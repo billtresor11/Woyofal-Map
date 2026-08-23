@@ -12,6 +12,7 @@
   },
   "scripts": {
     "setup": "npm install && npm run env:init && npm run build:core && npm run db:setup",
+    "demarrer": "npm run setup && npm run build && npm start",
     "db:setup": "npm run -w @woyofal/api db:push && npm run -w @woyofal/api db:seed",
     "build:core": "npm run -w @woyofal/core build",
     "dev": "npm run build:core && concurrently -n API,WEB -c green,cyan \"npm run -w @woyofal/api dev\" \"npm run -w @woyofal/web dev\"",

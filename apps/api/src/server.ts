@@ -72,8 +72,15 @@ if (isMain) {
   const host = process.env.HOST ?? '0.0.0.0';
   buildServer()
     .then((app) => app.listen({ port, host }))
-    .then((address) => {
-      console.log(`Woyofal Map API prête sur ${address}`);
+    .then(() => {
+      // Message volontairement écrit pour quelqu'un qui n'est pas developpeur.
+      console.log('');
+      console.log('  ✅  Woyofal Map est démarrée.');
+      console.log('');
+      console.log(`  👉  Ouvrez cette adresse dans votre navigateur :  http://localhost:${port}`);
+      console.log('');
+      console.log('  Pour arrêter : appuyez sur Ctrl + C dans cette fenêtre.');
+      console.log('');
     })
     .catch(async (error) => {
       console.error(error);

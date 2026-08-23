@@ -19,9 +19,20 @@ appliquant discrètement les tranches tarifaires de la Senelec.
 
 ---
 
-## Démarrage en 3 commandes
+## Démarrage
+
+> 🚀 **Vous n'êtes pas développeur ?** Suivez le guide pas à pas **[DEMARRER.md](DEMARRER.md)** :
+> une seule commande à recopier, 10 minutes, tout est expliqué.
 
 Prérequis : **Node.js 20 ou plus** (rien d'autre — la base de données de développement est un simple fichier).
+
+**La façon la plus simple** — installe, prépare et lance tout en une commande :
+
+```bash
+npm run demarrer      # puis ouvrez http://localhost:4000
+```
+
+**Pour développer** (rechargement automatique à chaque modification du code) :
 
 ```bash
 npm install          # installe tout le projet
@@ -29,7 +40,7 @@ npm run setup        # crée la base, y charge le catalogue, les tarifs et un fo
 npm run dev          # lance l'API (port 4000) et l'application (port 5173)
 ```
 
-Puis ouvrez **http://localhost:5173** sur votre téléphone ou dans un navigateur en mode mobile.
+Puis ouvrez **http://localhost:5173** dans un navigateur en mode mobile.
 
 Un foyer de démonstration (« Maison Démo (Dakar) », 3 personnes, 9 appareils) est créé
 automatiquement pour que rien ne soit jamais vide.
