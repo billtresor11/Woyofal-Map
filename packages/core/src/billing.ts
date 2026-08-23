@@ -7,18 +7,18 @@ import type { BillLine, BillResult, TariffPlan, TariffTier } from './types.js';
  *
  * Principe : le prix du kWh n'est pas unique. Il augmente par paliers.
  * Chaque kWh est facture au prix de la tranche dans laquelle il tombe,
- * en fonction du CUMUL deja consomme sur la periode de reference.
+ * en fonction du CUMUL déjà consomme sur la période de référence.
  *
  *   Exemple (grille Woyofal DPP), 300 kWh dans le mois :
  *     - les 150 premiers kWh  -> 150 x 91,17  = 13 675,50 FCFA
  *     - les 100 suivants      -> 100 x 101,44 = 10 144,00 FCFA
  *     - les 50 derniers       ->  50 x 116,35 =  5 817,50 FCFA
- *   ... puis TVA (la tranche sociale en est exoneree) et frais fixes.
+ *   ... puis TVA (la tranche sociale en est exonérée) et frais fixes.
  *
  * Consequence produit, invisible mais decisive : le "prix d'un kWh" depend
- * du moment du mois. Une session de PlayStation le 3 du mois ne coute pas la
- * meme chose que la meme session le 28. C'est pourquoi toutes les fonctions
- * acceptent `previousKwh` : les kWh deja consommes sur la periode.
+ * du moment du mois. Une session de PlayStation le 3 du mois ne coûte pas la
+ * même chose que la même session le 28. C'est pourquoi toutes les fonctions
+ * acceptent `previousKwh` : les kWh déjà consommés sur la période.
  */
 
 /** Nombre de jours moyen d'un mois (365,25 / 12). */
@@ -60,7 +60,7 @@ export function sliceByTier(
   for (const tier of tiers) {
     if (remaining <= 0) break;
     const upper = tier.toKwh ?? Number.POSITIVE_INFINITY;
-    if (cursor >= upper) continue; // tranche deja depassee par le cumul anterieur
+    if (cursor >= upper) continue; // tranche déjà dépassée par le cumul anterieur
     const room = upper - Math.max(cursor, tier.fromKwh);
     const take = Math.min(remaining, room);
     if (take > 0) {
@@ -70,7 +70,7 @@ export function sliceByTier(
     }
   }
 
-  // Securite : si la derniere tranche est bornee, on facture le reliquat a son prix.
+  // Sécurité : si la dernière tranche est bornee, on facture le reliquat a son prix.
   if (remaining > 0) {
     const last = tiers[tiers.length - 1];
     if (last) slices.push({ tier: last, kwh: remaining });
@@ -79,15 +79,15 @@ export function sliceByTier(
 }
 
 export interface BillOptions {
-  /** kWh deja consommes sur la periode de reference (defaut : 0). */
+  /** kWh déjà consommés sur la période de référence (défaut : 0). */
   previousKwh?: number;
-  /** Inclure la redevance / location compteur (defaut : true). */
+  /** Inclure la redevance / location compteur (défaut : true). */
   includeFixedFee?: boolean;
 }
 
 /**
- * Facture une quantite de kWh sur la PERIODE DE REFERENCE de la grille
- * (1 mois en prepaye Woyofal, 2 mois en postpaye).
+ * Facture une quantité de kWh sur la PERIODE DE REFERENCE de la grille
+ * (1 mois en prépayé Woyofal, 2 mois en postpayé).
  */
 export function computeBill(kwh: number, plan: TariffPlan, options: BillOptions = {}): BillResult {
   const previousKwh = Math.max(0, options.previousKwh ?? 0);
@@ -139,9 +139,9 @@ export function computeBill(kwh: number, plan: TariffPlan, options: BillOptions 
 }
 
 /**
- * Facture une consommation MENSUELLE, quelle que soit la periodicite de la grille.
- * En postpaye bimestriel, on raisonne sur 2 mois (les seuils portent sur le cumul
- * des deux mois) puis on ramene le resultat au mois.
+ * Facture une consommation MENSUELLE, quelle que soit la périodicité de la grille.
+ * En postpayé bimestriel, on raisonne sur 2 mois (les seuils portent sur le cumul
+ * des deux mois) puis on ramene le résultat au mois.
  */
 export function computeMonthlyBill(
   monthlyKwh: number,
@@ -173,9 +173,9 @@ export function computeMonthlyBill(
 }
 
 /**
- * Cout REEL d'une consommation supplementaire, sachant ce qui a deja ete
+ * Coût REEL d'une consommation supplementaire, sachant ce qui a déjà été
  * consomme dans le mois. C'est la fonction utilisee par l'estimateur ponctuel
- * ("combien me coute 3h de PlayStation ce soir ?").
+ * ("combien me coûte 3h de PlayStation ce soir ?").
  */
 export function marginalCost(
   previousKwh: number,
@@ -186,8 +186,8 @@ export function marginalCost(
 }
 
 /**
- * Question numero 1 des utilisateurs Woyofal :
- * "Avec 5 000 FCFA de recharge, je recois combien de kWh ?"
+ * Question numéro 1 des utilisateurs Woyofal :
+ * "Avec 5 000 FCFA de recharge, je reçois combien de kWh ?"
  * On parcourt les tranches en consommant le budget palier par palier.
  */
 export function kwhForAmount(

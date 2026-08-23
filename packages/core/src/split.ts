@@ -14,15 +14,15 @@ import type {
  * ---------------------------------------------------------------------------
  * Regle de justice retenue, volontairement simple a expliquer a table :
  *
- *  1. Un appareil PRIVE (le PC d une chambre, une clim de chambre) est
- *     entierement a la charge de son proprietaire.
- *  2. Un appareil COMMUN (frigo, tele du salon, pompe a eau) est partage
+ *  1. Un appareil PRIVE (le PC d’une chambre, une clim de chambre) est
+ *     entièrement a la charge de son propriétaire.
+ *  2. Un appareil COMMUN (frigo, télé du salon, pompe à eau) est partage
  *     au prorata de la PRESENCE de chacun dans le mois. Celui qui part deux
  *     semaines en voyage paie deux fois moins les charges communes.
  *  3. Les kWh sont convertis en FCFA au PRIX MOYEN du foyer, pas au prix
  *     marginal. Sinon le dernier a consommer paierait la tranche 3 pour tout
  *     le monde : injuste et incomprehensible.
- *  4. La redevance fixe eventuelle est partagee a parts egales.
+ *  4. La redevance fixe eventuelle est partagée a parts egales.
  */
 
 function round(value: number, decimals = 2): number {
@@ -37,9 +37,9 @@ export interface SplitInput {
   punctualUsages?: PunctualUsageInput[];
   plan: TariffPlan;
   /**
-   * Consommation reelle du mois si elle est connue (releve compteur ou somme
-   * des recharges Woyofal). Elle remplace l estimation pour la repartition,
-   * les parts de chacun restant calculees sur l inventaire.
+   * Consommation réelle du mois si elle est connue (releve compteur ou somme
+   * des recharges Woyofal). Elle remplace l’estimation pour la répartition,
+   * les parts de chacun restant calculées sur l’inventaire.
    */
   actualKwh?: number;
 }
@@ -54,7 +54,7 @@ export function splitHousehold(input: SplitInput): HouseholdSplit {
   }
   let unassignedKwh = 0;
 
-  // Poids de partage des charges communes : la presence de chacun.
+  // Poids de partage des charges communes : la présence de chacun.
   const weights = new Map<string, number>();
   let totalWeight = 0;
   for (const member of members) {
@@ -80,13 +80,13 @@ export function splitHousehold(input: SplitInput): HouseholdSplit {
       continue;
     }
 
-    // Appareil commun (ou prive sans proprietaire identifie).
+    // Appareil commun (ou privé sans propriétaire identifié).
     if (members.length === 0 || totalWeight === 0) {
       unassignedKwh += kwh;
       continue;
     }
 
-    // Ponderation explicite par membre si elle est fournie, sinon la presence.
+    // Pondération explicite par membre si elle est fournie, sinon la présence.
     const shares = appliance.shares;
     if (shares && Object.keys(shares).length > 0) {
       const sum = Object.values(shares).reduce((a, b) => a + b, 0);
@@ -116,13 +116,13 @@ export function splitHousehold(input: SplitInput): HouseholdSplit {
     } else unassignedKwh += usage.kwh;
   }
 
-  // Facture du foyer : c est elle qui donne le prix moyen du kWh.
+  // Facture du foyer : c’est elle qui donne le prix moyen du kWh.
   const totalKwh = input.actualKwh ?? inventoryKwh;
   const bill = computeMonthlyBill(totalKwh, plan);
   const energyAmount = bill.totalTTC - bill.fixedFee;
   const fixedPerMember = members.length > 0 ? bill.fixedFee / members.length : 0;
 
-  // Si un releve reel est fourni, on met les parts a l echelle de la realite.
+  // Si un releve réel est fourni, on met les parts a l’échelle de la réalité.
   const scale = inventoryKwh > 0 ? totalKwh / inventoryKwh : 0;
 
   const memberSplits: MemberSplit[] = members.map((member) => {

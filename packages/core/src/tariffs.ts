@@ -4,18 +4,18 @@ import type { TariffPlan } from './types.js';
  * ---------------------------------------------------------------------------
  * GRILLES TARIFAIRES SENELEC
  * ---------------------------------------------------------------------------
- * IMPORTANT : ces valeurs sont des valeurs par defaut, issues des grilles
- * domestiques publiees par la Senelec / la CRSE. Elles evoluent (revisions
+ * IMPORTANT : ces valeurs sont des valeurs par défaut, issues des grilles
+ * domestiques publiees par la Senelec / la CRSE. Elles évoluent (revisions
  * tarifaires, compensations de l'Etat). Elles sont donc :
- *   1. versionnees ici (source + date d'effet),
- *   2. copiees en base de donnees au seed (table TariffPlan / TariffTier),
- *   3. modifiables par l'utilisateur depuis l'ecran "Reglages > Mon tarif".
+ *   1. versionnées ici (source + date d'effet),
+ *   2. copiees en base de données au seed (table TariffPlan / TariffTier),
+ *   3. modifiables par l'utilisateur depuis l'écran "Réglages > Mon tarif".
  *
- * L'application ne depend jamais des chiffres eux-memes : seul l'algorithme
+ * L'application ne depend jamais des chiffres eux-mêmes : seul l'algorithme
  * de tranches ci-dessous (billing.ts) fait foi. Changer un prix = 1 UPDATE.
  *
- * Rappel Woyofal (prepaye) : les tranches se remettent a zero chaque mois
- * calendaire, sur le cumul de kWh achetes. En postpaye, la facture est
+ * Rappel Woyofal (prépayé) : les tranches se remettent a zéro chaque mois
+ * calendaire, sur le cumul de kWh achetes. En postpayé, la facture est
  * bimestrielle : les seuils s'appliquent au cumul des deux mois.
  */
 
@@ -26,7 +26,7 @@ export const TARIFF_PLANS: TariffPlan[] = [
     code: 'WOYOFAL_DPP',
     label: 'Woyofal - Petite Puissance',
     description:
-      "Compteur prepaye (recharge par code). Le cas le plus courant : maison ou appartement de 1 a 9 kVA.",
+      "Compteur prépayé (recharge par code). Le cas le plus courant : maison ou appartement de 1 à 9 kVA.",
     meterType: 'PREPAID',
     periodMonths: 1,
     minKva: 1,
@@ -35,7 +35,7 @@ export const TARIFF_PLANS: TariffPlan[] = [
     vatRate: 0.18,
     municipalTaxRate: 0,
     fixedFeePerMonth: 0,
-    source: 'Grille domestique petite puissance (DPP) - valeurs indicatives a confirmer sur votre recu Woyofal',
+    source: 'Grille domestique petite puissance (DPP) - valeurs indicatives a confirmer sur votre reçu Woyofal',
     effectiveFrom: '2024-01-01',
     tiers: [
       { order: 1, fromKwh: 0, toKwh: 150, pricePerKwh: 91.17, label: 'Tranche 1 (sociale)', vatExempt: true },
@@ -46,7 +46,7 @@ export const TARIFF_PLANS: TariffPlan[] = [
   {
     code: 'WOYOFAL_DMP',
     label: 'Woyofal - Moyenne Puissance',
-    description: 'Compteur prepaye pour les grandes maisons ou villas (10 kVA et plus).',
+    description: 'Compteur prépayé pour les grandes maisons ou villas (10 kVA et plus).',
     meterType: 'PREPAID',
     periodMonths: 1,
     minKva: 10,
@@ -55,7 +55,7 @@ export const TARIFF_PLANS: TariffPlan[] = [
     vatRate: 0.18,
     municipalTaxRate: 0,
     fixedFeePerMonth: 0,
-    source: 'Grille domestique moyenne puissance (DMP) - valeurs indicatives a confirmer sur votre recu Woyofal',
+    source: 'Grille domestique moyenne puissance (DMP) - valeurs indicatives a confirmer sur votre reçu Woyofal',
     effectiveFrom: '2024-01-01',
     tiers: [
       { order: 1, fromKwh: 0, toKwh: 150, pricePerKwh: 111.68, label: 'Tranche 1', vatExempt: false },
@@ -67,7 +67,7 @@ export const TARIFF_PLANS: TariffPlan[] = [
     code: 'POSTPAID_DPP',
     label: 'Facture papier - Petite Puissance',
     description:
-      'Compteur classique avec facture Senelec tous les 2 mois. Les tranches sont calculees sur le total des 2 mois.',
+      'Compteur classique avec facture Senelec tous les 2 mois. Les tranches sont calculées sur le total des 2 mois.',
     meterType: 'POSTPAID',
     periodMonths: 2,
     minKva: 1,

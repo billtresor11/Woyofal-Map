@@ -38,7 +38,7 @@ export async function buildServer() {
       error: 'INTERNAL_ERROR',
       message:
         statusCode === 500
-          ? "Une erreur est survenue de notre cote. Reessayez dans un instant."
+          ? "Une erreur est survenue de notre cote. Réessayez dans un instant."
           : error.message,
     });
   });
@@ -50,7 +50,7 @@ export async function buildServer() {
   await app.register(applianceRoutes);
   await app.register(estimateRoutes);
 
-  // En production, l API sert aussi le front compile : un seul conteneur a deployer.
+  // En production, l’API sert aussi le front compile : un seul conteneur a déployer.
   const webDist = path.resolve(__dirname, '../../web/dist');
   if (fs.existsSync(webDist)) {
     await app.register(fastifyStatic, { root: webDist });
@@ -73,7 +73,7 @@ if (isMain) {
   buildServer()
     .then((app) => app.listen({ port, host }))
     .then((address) => {
-      console.log(`Woyofal Map API prete sur ${address}`);
+      console.log(`Woyofal Map API prête sur ${address}`);
     })
     .catch(async (error) => {
       console.error(error);

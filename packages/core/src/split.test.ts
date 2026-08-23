@@ -30,7 +30,7 @@ const members: MemberInput[] = [
   { id: 'c', name: 'Coumba', emoji: '👧', color: '#22C55E', presenceRatio: 1 },
 ];
 
-describe('repartition de la facture', () => {
+describe('répartition de la facture', () => {
   it('partage les appareils communs a parts egales', () => {
     const result = splitHousehold({
       month: '2026-08',
@@ -43,7 +43,7 @@ describe('repartition de la facture', () => {
     expect(parts[1]).toBeCloseTo(parts[2]!, 3);
   });
 
-  it('met un appareil prive entierement a la charge de son proprietaire', () => {
+  it('met un appareil privé entièrement a la charge de son propriétaire', () => {
     const result = splitHousehold({
       month: '2026-08',
       members,
@@ -57,7 +57,7 @@ describe('repartition de la facture', () => {
     );
   });
 
-  it('reduit la part de celui qui est absent la moitie du mois', () => {
+  it('reduit la part de celui qui est absent la moitié du mois', () => {
     const result = splitHousehold({
       month: '2026-08',
       members: [
@@ -92,7 +92,7 @@ describe('repartition de la facture', () => {
       members,
       appliances: [
         appliance('1', 'refrigerateur', 'SHARED'),
-        appliance('2', 'televiseur', 'SHARED'),
+        appliance('2', 'téléviseur', 'SHARED'),
         appliance('3', 'climatiseur', 'PRIVATE', 'a'),
         appliance('4', 'ordinateur', 'PRIVATE', 'b'),
         appliance('5', 'ampoules', 'SHARED'),
@@ -103,7 +103,7 @@ describe('repartition de la facture', () => {
     expect(Math.abs(sum - result.totalAmount)).toBeLessThanOrEqual(result.members.length);
   });
 
-  it('met les parts a l echelle du releve reel quand il est connu', () => {
+  it('met les parts a l’échelle du releve réel quand il est connu', () => {
     const appliances = [appliance('1', 'refrigerateur', 'SHARED')];
     const estimated = appliances[0]!.consumption.kwhPerMonth;
     const result = splitHousehold({

@@ -12,7 +12,7 @@ import { getTariffPlan } from './tariffs.js';
 const woyofal = getTariffPlan('WOYOFAL_DPP');
 const postpaid = getTariffPlan('POSTPAID_DPP');
 
-describe('decoupage par tranches', () => {
+describe('découpage par tranches', () => {
   it('reste dans la tranche 1 sous 150 kWh', () => {
     const slices = sliceByTier(0, 120, woyofal);
     expect(slices).toHaveLength(1);
@@ -29,7 +29,7 @@ describe('decoupage par tranches', () => {
     ]);
   });
 
-  it('tient compte des kWh deja consommes dans le mois', () => {
+  it('tient compte des kWh déjà consommés dans le mois', () => {
     const slices = sliceByTier(140, 30, woyofal);
     expect(slices.map((s) => [s.tier.order, s.kwh])).toEqual([
       [1, 10],
@@ -39,10 +39,10 @@ describe('decoupage par tranches', () => {
 });
 
 describe('facturation', () => {
-  it('facture 300 kWh avec TVA et exoneration de la tranche sociale', () => {
+  it('facture 300 kWh avec TVA et exonération de la tranche sociale', () => {
     const bill = computeBill(300, woyofal);
     expect(bill.energyHT).toBeCloseTo(150 * 91.17 + 100 * 101.44 + 50 * 116.35, 2);
-    // La tranche 1 est exoneree : la TVA ne porte que sur les tranches 2 et 3.
+    // La tranche 1 est exonérée : la TVA ne porte que sur les tranches 2 et 3.
     expect(bill.vat).toBeCloseTo((100 * 101.44 + 50 * 116.35) * 0.18, 2);
     expect(bill.totalTTC).toBe(32510);
     expect(bill.currentTier.order).toBe(3);
@@ -62,11 +62,11 @@ describe('facturation', () => {
     expect(bill.lines).toHaveLength(0);
   });
 
-  it('applique les seuils sur 2 mois pour le postpaye et ramene au mois', () => {
+  it('applique les seuils sur 2 mois pour le postpayé et ramene au mois', () => {
     const monthly = computeMonthlyBill(100, postpaid);
     const period = computeBill(200, postpaid, { includeFixedFee: true });
     expect(monthly.totalTTC).toBe(Math.round(period.totalTTC / 2));
-    // 200 kWh sur 2 mois : on est deja en tranche 2, contrairement au prepaye.
+    // 200 kWh sur 2 mois : on est déjà en tranche 2, contrairement au prépayé.
     expect(monthly.currentTier.order).toBe(2);
   });
 
@@ -77,8 +77,8 @@ describe('facturation', () => {
   });
 });
 
-describe('cout marginal', () => {
-  it('la meme consommation coute plus cher en fin de mois', () => {
+describe('coût marginal', () => {
+  it('la même consommation coûte plus cher en fin de mois', () => {
     const debutDeMois = marginalCost(10, 5, woyofal).totalTTC;
     const finDeMois = marginalCost(280, 5, woyofal).totalTTC;
     expect(finDeMois).toBeGreaterThan(debutDeMois);
@@ -92,17 +92,17 @@ describe('cout marginal', () => {
 describe('recharge Woyofal', () => {
   it('convertit un montant en kWh', () => {
     const result = kwhForAmount(5000, woyofal);
-    // Tranche 1 exoneree de TVA : 5000 / 91,17
+    // Tranche 1 exonérée de TVA : 5000 / 91,17
     expect(result.kwh).toBeCloseTo(5000 / 91.17, 1);
   });
 
-  it('donne moins de kWh quand on a deja beaucoup consomme', () => {
+  it('donne moins de kWh quand on a déjà beaucoup consomme', () => {
     const debut = kwhForAmount(10000, woyofal, 0).kwh;
     const fin = kwhForAmount(10000, woyofal, 300).kwh;
     expect(fin).toBeLessThan(debut);
   });
 
-  it('est coherent avec le calcul direct', () => {
+  it('est cohérent avec le calcul direct', () => {
     const kwh = kwhForAmount(20000, woyofal).kwh;
     const bill = computeBill(kwh, woyofal, { includeFixedFee: false });
     expect(bill.totalTTC).toBeCloseTo(20000, -1);

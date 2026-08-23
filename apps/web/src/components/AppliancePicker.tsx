@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ApplianceTemplate, Catalog } from '../api/types.js';
 import { ApplianceIcon } from './ApplianceIcon.js';
 import { Sheet } from './ui.js';
@@ -11,8 +11,8 @@ function normalize(value: string): string {
 }
 
 /**
- * Le menu principal du produit : une grille d illustrations.
- * On ne demande jamais "quelle puissance ?" - on montre des objets a reconnaitre.
+ * Le menu principal du produit : une grille d’illustrations.
+ * On ne demande jamais "quelle puissance ?" - on montre des objets à reconnaître.
  */
 export function AppliancePicker({
   open,
@@ -27,6 +27,15 @@ export function AppliancePicker({
 }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
+
+  // On repart d'une grille complète à chaque ouverture : une recherche oubliée
+  // donnerait l'impression que le catalogue s'est vidé.
+  useEffect(() => {
+    if (open) {
+      setQuery('');
+      setCategory(null);
+    }
+  }, [open]);
 
   const templates = useMemo(() => {
     if (!catalog) return [];
@@ -45,14 +54,14 @@ export function AppliancePicker({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Qu avez-vous chez vous ?"
-      subtitle="Touchez un appareil pour l ajouter."
+      title="Qu’avez-vous chez vous ?"
+      subtitle="Touchez un appareil pour l’ajouter."
     >
       <div className="sticky -top-4 z-10 -mx-5 -mt-4 mb-4 bg-sand-50 px-5 pb-3 pt-4">
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Rechercher : frigo, clim, tele..."
+          placeholder="Rechercher : frigo, clim, télé..."
           className="w-full rounded-2xl border-2 border-transparent bg-white px-4 py-3 text-base font-bold shadow-card outline-none placeholder:font-bold placeholder:text-ink-muted focus:border-teal-500"
         />
         <div className="no-scrollbar -mx-5 mt-3 flex gap-2 overflow-x-auto px-5">
@@ -80,7 +89,7 @@ export function AppliancePicker({
 
       {templates.length === 0 ? (
         <p className="py-10 text-center text-sm font-bold text-ink-muted">
-          Aucun appareil ne correspond a "{query}".
+          Aucun appareil ne correspond à "{query}".
         </p>
       ) : (
         <div className="grid grid-cols-3 gap-3 pb-4">

@@ -9,9 +9,9 @@ import type {
  * ---------------------------------------------------------------------------
  * CATALOGUE VISUEL DES APPAREILS
  * ---------------------------------------------------------------------------
- * Source de verite unique, partagee par le front (affichage instantane, hors
+ * Source de verite unique, partagée par le front (affichage instantané, hors
  * ligne) et l'API (recalcul et validation cote serveur). Le seed la recopie en
- * base pour qu'elle reste extensible sans redeploiement.
+ * base pour qu'elle reste extensible sans redéploiement.
  *
  * Les puissances sont des moyennes de marche pour des appareils courants au
  * Senegal. Elles servent d'ESTIMATION : l'objectif est de donner un ordre de
@@ -23,9 +23,9 @@ export const CATEGORIES: ApplianceCategory[] = [
   { id: 'confort', label: 'Confort & air', emoji: '💨', color: '#22C55E' },
   { id: 'salon', label: 'Salon & loisirs', emoji: '📺', color: '#8B5CF6' },
   { id: 'cuisine', label: 'Cuisine', emoji: '🍲', color: '#F97316' },
-  { id: 'buanderie', label: 'Linge & menage', emoji: '🧺', color: '#14B8A6' },
-  { id: 'numerique', label: 'Numerique', emoji: '💻', color: '#3B82F6' },
-  { id: 'eclairage', label: 'Eclairage', emoji: '💡', color: '#EAB308' },
+  { id: 'buanderie', label: 'Linge & ménage', emoji: '🧺', color: '#14B8A6' },
+  { id: 'numerique', label: 'Numérique', emoji: '💻', color: '#3B82F6' },
+  { id: 'eclairage', label: 'Éclairage', emoji: '💡', color: '#EAB308' },
   { id: 'eau', label: 'Eau', emoji: '🚿', color: '#06B6D4' },
 ];
 
@@ -42,17 +42,17 @@ function profile(
   return { id, label, emoji, hoursPerDay, daysPerWeek, hint };
 }
 
-/** Etat / age de l'appareil : le facteur le plus sous-estime par les foyers. */
+/** État / âge de l’appareil : le facteur le plus sous-estimé par les foyers. */
 const AGE_ATTRIBUTE: ApplianceAttribute = {
   key: 'etat',
-  label: 'Age',
-  question: "Il a quel age, a peu pres ?",
+  label: 'Âge',
+  question: "Il a quel âge, à peu près ?",
   emoji: '⏳',
   defaultOptionId: 'moyen',
   options: [
-    { id: 'neuf', label: 'Recent', hint: 'Moins de 3 ans', emoji: '✨', factor: 0.8 },
-    { id: 'moyen', label: 'Quelques annees', hint: 'Entre 3 et 10 ans', emoji: '👍', factor: 1 },
-    { id: 'vieux', label: 'Ancien', hint: 'Plus de 10 ans, ou d occasion', emoji: '🕰️', factor: 1.35 },
+    { id: 'neuf', label: 'Récent', hint: 'Moins de 3 ans', emoji: '✨', factor: 0.8 },
+    { id: 'moyen', label: 'Quelques années', hint: 'Entre 3 et 10 ans', emoji: '👍', factor: 1 },
+    { id: 'vieux', label: 'Ancien', hint: 'Plus de 10 ans, ou d’occasion', emoji: '🕰️', factor: 1.35 },
   ],
 };
 
@@ -67,14 +67,14 @@ const QUANTITY_ATTRIBUTE = (label: string, emoji: string): ApplianceAttribute =>
     { id: 'q2', label: `2 ${label}s`, quantity: 2 },
     { id: 'q3', label: `3 ${label}s`, quantity: 3 },
     { id: 'q5', label: `5 ${label}s`, quantity: 5 },
-    { id: 'q8', label: `8 ${label}s ou plus`, quantity: 8 },
+    { id: 'q8', label: `8 ${label}s’ou plus`, quantity: 8 },
   ],
 });
 
 const EVENING_PROFILES: UsageProfile[] = [
   profile('leger', 'De temps en temps', '🌤️', 2, 5, 'Environ 2h, quelques jours'),
-  profile('soir', 'Tous les soirs', '🌙', 5, 7, 'La soiree en famille'),
-  profile('journee', 'Une bonne partie de la journee', '☀️', 10, 7),
+  profile('soir', 'Tous les soirs', '🌙', 5, 7, 'La soirée en famille'),
+  profile('journée', 'Une bonne partie de la journée', '☀️', 10, 7),
   profile('permanent', 'Presque tout le temps', '🔁', 16, 7),
 ];
 
@@ -84,7 +84,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
   // ------------------------------------------------------------------ FROID
   {
     id: 'refrigerateur',
-    name: 'Refrigerateur',
+    name: 'Réfrigérateur',
     category: 'froid',
     emoji: '🧊',
     keywords: ['frigo', 'frigidaire', 'refrigerateur'],
@@ -102,33 +102,33 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         options: [
           { id: 'mini', label: 'Mini-bar', hint: 'Environ 90 litres', emoji: '🥤', watts: 70 },
           { id: 'petit', label: 'Petit', hint: 'Environ 150 litres', emoji: '🧃', watts: 95 },
-          { id: 'moyen', label: 'Moyen', hint: 'Environ 200 a 250 litres', emoji: '🧊', watts: 125 },
+          { id: 'moyen', label: 'Moyen', hint: 'Environ 200 à 250 litres', emoji: '🧊', watts: 125 },
           { id: 'grand', label: 'Grand', hint: 'Environ 350 litres, 2 portes', emoji: '🚪', watts: 165 },
-          { id: 'americain', label: 'Tres grand', hint: 'Type americain, 500 litres et plus', emoji: '🏔️', watts: 230 },
+          { id: 'américain', label: 'Très grand', hint: 'Type américain, 500 litres et plus', emoji: '🏔️', watts: 230 },
         ],
       },
       AGE_ATTRIBUTE,
       {
         key: 'emplacement',
         label: 'Emplacement',
-        question: 'Il est pose ou ?',
+        question: 'Il est posé où ?',
         emoji: '📍',
         defaultOptionId: 'normal',
         options: [
-          { id: 'frais', label: 'Piece fraiche', hint: 'Salon climatise', emoji: '❄️', factor: 0.88 },
-          { id: 'normal', label: 'Piece normale', emoji: '🏠', factor: 1 },
-          { id: 'chaud', label: 'Cuisine tres chaude', hint: 'Ou plein soleil', emoji: '🔥', factor: 1.2 },
+          { id: 'frais', label: 'Pièce fraîche', hint: 'Salon climatisé', emoji: '❄️', factor: 0.88 },
+          { id: 'normal', label: 'Pièce normale', emoji: '🏠', factor: 1 },
+          { id: 'chaud', label: 'Cuisine très chaude', hint: 'Ou plein soleil', emoji: '🔥', factor: 1.2 },
         ],
       },
     ],
     tips: [
-      'Laissez 10 cm entre le mur et l arriere du frigo : il respire mieux et consomme moins.',
-      'Un joint de porte abime peut ajouter plusieurs milliers de FCFA par mois.',
+      'Laissez 10 cm entre le mur et l’arrière du frigo : il respire mieux et consomme moins.',
+      'Un joint de porte abîmé peut ajouter plusieurs milliers de FCFA par mois.',
     ],
   },
   {
     id: 'congelateur',
-    name: 'Congelateur',
+    name: 'Congélateur',
     category: 'froid',
     emoji: '❄️',
     keywords: ['congelateur', 'freezer', 'bahut'],
@@ -151,7 +151,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       },
       AGE_ATTRIBUTE,
     ],
-    tips: ['Un congelateur plein consomme moins qu un congelateur a moitie vide.'],
+    tips: ['Un congélateur plein consomme moins qu’un congélateur à moitié vide.'],
   },
 
   // ---------------------------------------------------------------- CONFORT
@@ -170,20 +170,20 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'puissance',
         label: 'Taille',
-        question: 'C est quel modele ?',
+        question: 'C est quel modèle ?',
         emoji: '📏',
         defaultOptionId: 'cv1_5',
         options: [
           { id: 'cv1', label: '1 CV', hint: 'Pour une petite chambre', emoji: '🛏️', watts: 900 },
           { id: 'cv1_5', label: '1,5 CV', hint: 'Le plus courant', emoji: '🏠', watts: 1300 },
           { id: 'cv2', label: '2 CV', hint: 'Grand salon', emoji: '🛋️', watts: 1800 },
-          { id: 'cv3', label: '3 CV et plus', hint: 'Tres grande piece', emoji: '🏢', watts: 2600 },
+          { id: 'cv3', label: '3 CV et plus', hint: 'Très grande pièce', emoji: '🏢', watts: 2600 },
         ],
       },
       {
         key: 'techno',
         label: 'Technologie',
-        question: 'Est-ce un modele "inverter" ?',
+        question: 'Est-ce un modèle "inverter" ?',
         emoji: '⚙️',
         defaultOptionId: 'classique',
         options: [
@@ -192,27 +192,27 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         ],
       },
       {
-        key: 'reglage',
-        label: 'Reglage',
-        question: 'Vous le reglez a combien ?',
+        key: 'réglage',
+        label: 'Réglage',
+        question: 'Vous le réglez à combien ?',
         emoji: '🌡️',
         defaultOptionId: 'moyen',
         options: [
-          { id: 'doux', label: '25-26 degres', hint: 'Le reglage economique', emoji: '🙂', dutyCycle: 0.5 },
-          { id: 'moyen', label: '22-24 degres', emoji: '😌', dutyCycle: 0.7 },
-          { id: 'froid', label: '18-20 degres', hint: 'Tres froid, tres cher', emoji: '🥶', dutyCycle: 0.92 },
+          { id: 'doux', label: '25-26 degrés', hint: 'Le réglage économique', emoji: '🙂', dutyCycle: 0.5 },
+          { id: 'moyen', label: '22-24 degrés', emoji: '😌', dutyCycle: 0.7 },
+          { id: 'froid', label: '18-20 degrés', hint: 'Très froid, très cher', emoji: '🥶', dutyCycle: 0.92 },
         ],
       },
     ],
     usageProfiles: [
       profile('ponctuel', 'Juste quelques heures', '⏱️', 3, 4, 'Les jours de forte chaleur'),
-      profile('nuit', 'Toute la nuit', '🌙', 8, 7, 'De 22h a 6h'),
+      profile('nuit', 'Toute la nuit', '🌙', 8, 7, 'De 22h à 6h'),
       profile('nuit_soir', 'Le soir et la nuit', '🌆', 12, 7),
       profile('continu', 'Presque en permanence', '🔁', 18, 7),
     ],
     tips: [
-      'Chaque degre gagne sur le thermostat, c est environ 7% de facture en moins.',
-      'Nettoyer les filtres tous les mois peut faire economiser jusqu a 10%.',
+      'Chaque degré gagné sur le thermostat, c’est environ 7% de facture en moins.',
+      'Nettoyer les filtres tous les mois peut faire économiser jusqu’à 10%.',
     ],
   },
   {
@@ -237,7 +237,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
           { id: 'table', label: 'De table', emoji: '🪑', watts: 40 },
           { id: 'pied', label: 'Sur pied', emoji: '🧍', watts: 60 },
           { id: 'plafond', label: 'Au plafond', emoji: '🔝', watts: 75 },
-          { id: 'brasseur', label: 'Gros brasseur d air', emoji: '🌪️', watts: 110 },
+          { id: 'brasseur', label: 'Gros brasseur d’air', emoji: '🌪️', watts: 110 },
         ],
       },
       QUANTITY_ATTRIBUTE('ventilateur', '🔢'),
@@ -247,16 +247,16 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       profile('nuit', 'Toute la nuit', '🌙', 9, 7),
       profile('jour_nuit', 'Jour et nuit', '🔁', 18, 7),
     ],
-    tips: ['Un ventilateur coute environ 20 fois moins cher qu un climatiseur.'],
+    tips: ['Un ventilateur coûte environ 20 fois moins cher qu’un climatiseur.'],
   },
 
   // ------------------------------------------------------------------ SALON
   {
-    id: 'televiseur',
-    name: 'Televiseur',
+    id: 'téléviseur',
+    name: 'Téléviseur',
     category: 'salon',
     emoji: '📺',
-    keywords: ['tv', 'television', 'ecran', 'tele'],
+    keywords: ['tv', 'télévision', 'écran', 'télé'],
     alwaysOn: false,
     basePowerWatts: 80,
     dutyCycle: 1,
@@ -266,25 +266,25 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'taille',
         label: 'Taille',
-        question: 'Quelle taille d ecran ?',
+        question: 'Quelle taille d’écran ?',
         emoji: '📏',
         defaultOptionId: 'p43',
         options: [
-          { id: 'tube', label: 'Ancienne tele a tube', emoji: '📻', watts: 150 },
+          { id: 'tube', label: 'Ancienne télé à tube', emoji: '📻', watts: 150 },
           { id: 'p32', label: 'Petite, 32 pouces', emoji: '🖼️', watts: 55 },
           { id: 'p43', label: 'Moyenne, 43 pouces', emoji: '📺', watts: 85 },
           { id: 'p55', label: 'Grande, 55 pouces', emoji: '🎬', watts: 125 },
-          { id: 'p65', label: 'Tres grande, 65 pouces et plus', emoji: '🍿', watts: 170 },
+          { id: 'p65', label: 'Très grande, 65 pouces et plus', emoji: '🍿', watts: 170 },
         ],
       },
-      QUANTITY_ATTRIBUTE('televiseur', '🔢'),
+      QUANTITY_ATTRIBUTE('téléviseur', '🔢'),
     ],
     usageProfiles: EVENING_PROFILES,
-    tips: ['Eteindre la tele au lieu de la laisser en veille evite une petite fuite permanente.'],
+    tips: ['Éteindre la télé au lieu de la laisser en veille évite une petite fuite permanente.'],
   },
   {
     id: 'decodeur',
-    name: 'Decodeur TV',
+    name: 'Décodeur TV',
     category: 'salon',
     emoji: '📡',
     keywords: ['canal', 'decodeur', 'tnt', 'parabole'],
@@ -296,7 +296,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel type de decodeur ?',
+        question: 'Quel type de décodeur ?',
         emoji: '📡',
         defaultOptionId: 'satellite',
         options: [
@@ -308,16 +308,16 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'veille',
         label: 'Veille',
-        question: 'Le debranchez-vous la nuit ?',
+        question: 'Le débranchez-vous la nuit ?',
         emoji: '🔌',
         defaultOptionId: 'jamais',
         options: [
-          { id: 'jamais', label: 'Non, jamais', hint: 'Il reste allume 24h/24', emoji: '🔁', factor: 1, alwaysOn: true },
+          { id: 'jamais', label: 'Non, jamais', hint: 'Il reste allumé 24h/24', emoji: '🔁', factor: 1, alwaysOn: true },
           { id: 'souvent', label: 'Oui, souvent', hint: 'Bonne habitude', emoji: '✅', factor: 0.45 },
         ],
       },
     ],
-    tips: ['Un decodeur allume 24h/24 consomme autant qu une ampoule qui ne s eteint jamais.'],
+    tips: ['Un décodeur allumé 24h/24 consomme autant qu’une ampoule qui ne s’éteint jamais.'],
   },
   {
     id: 'console_jeu',
@@ -332,8 +332,8 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     defaultUsageProfileId: 'leger',
     attributes: [
       {
-        key: 'modele',
-        label: 'Modele',
+        key: 'modèle',
+        label: 'Modèle',
         question: 'Quelle console ?',
         emoji: '🕹️',
         defaultOptionId: 'ps4',
@@ -351,11 +351,11 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       profile('soir', 'Presque tous les soirs', '🌙', 3, 6),
       profile('intense', 'Plusieurs heures par jour', '🔥', 6, 7),
     ],
-    tips: ['Une console laissee en pause toute la nuit consomme presque autant qu en jeu.'],
+    tips: ['Une console laissée en pause toute la nuit consomme presque autant qu’en jeu.'],
   },
   {
     id: 'chaine_hifi',
-    name: 'Sono / chaine hi-fi',
+    name: 'Sono / chaîne hi-fi',
     category: 'salon',
     emoji: '🔊',
     keywords: ['sono', 'baffle', 'enceinte', 'musique', 'hifi'],
@@ -368,12 +368,12 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'taille',
         label: 'Puissance',
-        question: 'Ca fait quel bruit ?',
+        question: 'Ça fait quel bruit ?',
         emoji: '🎚️',
         defaultOptionId: 'moyenne',
         options: [
           { id: 'petite', label: 'Petite enceinte', emoji: '🔈', watts: 30 },
-          { id: 'moyenne', label: 'Chaine de salon', emoji: '🔉', watts: 90 },
+          { id: 'moyenne', label: 'Chaîne de salon', emoji: '🔉', watts: 90 },
           { id: 'grosse', label: 'Grosse sono', emoji: '📢', watts: 300 },
         ],
       },
@@ -388,7 +388,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     name: 'Bouilloire',
     category: 'cuisine',
     emoji: '☕',
-    keywords: ['bouilloire', 'the', 'cafe', 'eau chaude'],
+    keywords: ['bouilloire', 'the', 'café', 'eau chaude'],
     alwaysOn: false,
     basePowerWatts: 2000,
     dutyCycle: 1,
@@ -398,29 +398,29 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel modele ?',
+        question: 'Quel modèle ?',
         emoji: '🫖',
         defaultOptionId: 'standard',
         options: [
           { id: 'petite', label: 'Petite, 1 litre', emoji: '🥤', watts: 1500 },
           { id: 'standard', label: 'Standard, 1,7 litre', emoji: '🫖', watts: 2000 },
-          { id: 'grande', label: 'Grande / thermos electrique', emoji: '🍵', watts: 2500 },
+          { id: 'grande', label: 'Grande / thermos électrique', emoji: '🍵', watts: 2500 },
         ],
       },
     ],
     usageProfiles: [
       profile('matin', 'Une fois par jour', '🌅', 0.15, 7, 'Environ 10 minutes'),
       profile('souvent', 'Plusieurs fois par jour', '🔁', 0.4, 7, 'Environ 25 minutes'),
-      profile('ataya', 'Toute la journee', '🍵', 1, 7, 'Ataya, thermos...'),
+      profile('ataya', 'Toute la journée', '🍵', 1, 7, 'Ataya, thermos...'),
     ],
-    tips: ['Ne faites bouillir que la quantite d eau dont vous avez besoin.'],
+    tips: ['Ne faites bouillir que la quantité d’eau dont vous avez besoin.'],
   },
   {
     id: 'micro_ondes',
     name: 'Micro-ondes',
     category: 'cuisine',
     emoji: '🍲',
-    keywords: ['micro-ondes', 'micro onde', 'rechauffer'],
+    keywords: ['micro-ondes', 'micro onde', 'réchauffer'],
     alwaysOn: false,
     basePowerWatts: 1200,
     dutyCycle: 1,
@@ -430,7 +430,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel modele ?',
+        question: 'Quel modèle ?',
         emoji: '📏',
         defaultOptionId: 'standard',
         options: [
@@ -442,16 +442,16 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     usageProfiles: [
       profile('rare', 'De temps en temps', '⏱️', 0.1, 3),
       profile('normal', 'Tous les jours', '🍽️', 0.25, 7, 'Environ 15 minutes'),
-      profile('souvent', 'A chaque repas', '🔁', 0.6, 7),
+      profile('souvent', 'À chaque repas', '🔁', 0.6, 7),
     ],
     tips: [],
   },
   {
     id: 'cuiseur_riz',
-    name: 'Cuiseur / plaque electrique',
+    name: 'Cuiseur / plaque électrique',
     category: 'cuisine',
     emoji: '🍚',
-    keywords: ['cuiseur', 'riz', 'plaque', 'rechaud', 'marmite'],
+    keywords: ['cuiseur', 'riz', 'plaque', 'réchaud', 'marmite'],
     alwaysOn: false,
     basePowerWatts: 900,
     dutyCycle: 1,
@@ -465,19 +465,19 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         emoji: '🍳',
         defaultOptionId: 'cuiseur',
         options: [
-          { id: 'cuiseur', label: 'Cuiseur a riz', emoji: '🍚', watts: 700 },
+          { id: 'cuiseur', label: 'Cuiseur à riz', emoji: '🍚', watts: 700 },
           { id: 'plaque', label: 'Plaque chauffante', emoji: '🍳', watts: 1500 },
           { id: 'friteuse', label: 'Friteuse / air fryer', emoji: '🍟', watts: 1600 },
-          { id: 'four', label: 'Four electrique', emoji: '🥖', watts: 2000 },
+          { id: 'four', label: 'Four électrique', emoji: '🥖', watts: 2000 },
         ],
       },
     ],
     usageProfiles: [
-      profile('rare', '1 a 2 fois par semaine', '📅', 1, 2),
+      profile('rare', '1 à 2 fois par semaine', '📅', 1, 2),
       profile('quotidien', 'Une fois par jour', '🍽️', 1, 7),
       profile('intense', 'Plusieurs fois par jour', '🔁', 2.5, 7),
     ],
-    tips: ['Cuisiner au gaz reste nettement moins cher que la plaque electrique.'],
+    tips: ['Cuisiner au gaz reste nettement moins cher que la plaque électrique.'],
   },
   {
     id: 'mixeur',
@@ -494,7 +494,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel modele ?',
+        question: 'Quel modèle ?',
         emoji: '🌀',
         defaultOptionId: 'standard',
         options: [
@@ -514,7 +514,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
   // -------------------------------------------------------------- BUANDERIE
   {
     id: 'machine_laver',
-    name: 'Machine a laver',
+    name: 'Machine à laver',
     category: 'buanderie',
     emoji: '🧺',
     keywords: ['machine', 'lave-linge', 'laver', 'linge'],
@@ -527,24 +527,24 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'programme',
         label: 'Programme',
-        question: 'Vous lavez a quelle temperature ?',
+        question: 'Vous lavez à quelle température ?',
         emoji: '🌡️',
         defaultOptionId: 'froid',
         options: [
-          { id: 'froid', label: 'A froid', hint: 'Le plus economique', emoji: '❄️', watts: 400 },
-          { id: 'tiede', label: 'Tiede, 40 degres', emoji: '🌤️', watts: 1100 },
-          { id: 'chaud', label: 'Chaud, 60 degres et plus', emoji: '🔥', watts: 1800 },
+          { id: 'froid', label: 'A froid', hint: 'Le plus économique', emoji: '❄️', watts: 400 },
+          { id: 'tiède', label: 'Tiede, 40 degrés', emoji: '🌤️', watts: 1100 },
+          { id: 'chaud', label: 'Chaud, 60 degrés et plus', emoji: '🔥', watts: 1800 },
         ],
       },
       {
-        key: 'sechage',
-        label: 'Sechage',
-        question: 'Utilisez-vous le seche-linge ?',
+        key: 'séchage',
+        label: 'Séchage',
+        question: 'Utilisez-vous le sèche-linge ?',
         emoji: '🌀',
         defaultOptionId: 'non',
         options: [
-          { id: 'non', label: 'Non, je seche dehors', emoji: '☀️', factor: 1 },
-          { id: 'oui', label: 'Oui, machine a secher', emoji: '🌀', factor: 2.4 },
+          { id: 'non', label: 'Non, je sèche dehors', emoji: '☀️', factor: 1 },
+          { id: 'oui', label: 'Oui, machine à sécher', emoji: '🌀', factor: 2.4 },
         ],
       },
     ],
@@ -554,11 +554,11 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       profile('quatre', '4 lessives par semaine', '📅', 1.5, 4),
       profile('quotidien', 'Tous les jours', '🔁', 1.5, 7),
     ],
-    tips: ['Laver a froid avec une lessive adaptee divise la consommation par trois.'],
+    tips: ['Laver à froid avec une lessive adaptée divise la consommation par trois.'],
   },
   {
     id: 'fer_repasser',
-    name: 'Fer a repasser',
+    name: 'Fer à repasser',
     category: 'buanderie',
     emoji: '👔',
     keywords: ['fer', 'repasser', 'repassage'],
@@ -582,18 +582,18 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     ],
     usageProfiles: [
       profile('rare', 'De temps en temps', '⏱️', 0.5, 1),
-      profile('hebdo', 'Une seance par semaine', '📅', 1.5, 1),
+      profile('hebdo', 'Une séance par semaine', '📅', 1.5, 1),
       profile('souvent', 'Plusieurs fois par semaine', '🔁', 1, 4),
       profile('quotidien', 'Tous les matins', '🌅', 0.4, 7),
     ],
-    tips: ['Repasser tout le linge en une seule seance evite de rechauffer le fer 5 fois.'],
+    tips: ['Repasser tout le linge en une seule séance évite de réchauffer le fer 5 fois.'],
   },
   {
     id: 'aspirateur',
     name: 'Aspirateur',
     category: 'buanderie',
     emoji: '🧹',
-    keywords: ['aspirateur', 'menage'],
+    keywords: ['aspirateur', 'ménage'],
     alwaysOn: false,
     basePowerWatts: 900,
     dutyCycle: 1,
@@ -608,7 +608,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         defaultOptionId: 'standard',
         options: [
           { id: 'balai', label: 'Aspirateur balai', emoji: '🧹', watts: 350 },
-          { id: 'standard', label: 'Aspirateur traineau', emoji: '🛒', watts: 900 },
+          { id: 'standard', label: 'Aspirateur traîneau', emoji: '🛒', watts: 900 },
         ],
       },
     ],
@@ -634,17 +634,17 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel equipement ?',
+        question: 'Quel équipement ?',
         emoji: '📶',
         defaultOptionId: 'box',
         options: [
           { id: 'cle', label: 'Cle / petit routeur 4G', emoji: '🔑', watts: 6 },
           { id: 'box', label: 'Box internet', emoji: '📦', watts: 12 },
-          { id: 'box_repeteur', label: 'Box + repeteur wifi', emoji: '📡', watts: 20 },
+          { id: 'box_repeteur', label: 'Box + répéteur wifi', emoji: '📡', watts: 20 },
         ],
       },
     ],
-    tips: ['Une box branchee toute l annee, c est environ 100 kWh : de quoi surprendre.'],
+    tips: ['Une box branchée toute l’année, c’est environ 100 kWh : de quoi surprendre.'],
   },
   {
     id: 'ordinateur',
@@ -661,13 +661,13 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel type d ordinateur ?',
+        question: 'Quel type d’ordinateur ?',
         emoji: '💻',
         defaultOptionId: 'portable',
         options: [
           { id: 'portable', label: 'Portable', emoji: '💻', watts: 50 },
           { id: 'portable_pro', label: 'Portable puissant / gamer', emoji: '🎮', watts: 110 },
-          { id: 'bureau', label: 'Ordinateur de bureau', hint: 'Avec ecran', emoji: '🖥️', watts: 180 },
+          { id: 'bureau', label: 'Ordinateur de bureau', hint: 'Avec écran', emoji: '🖥️', watts: 180 },
         ],
       },
       QUANTITY_ATTRIBUTE('ordinateur', '🔢'),
@@ -675,40 +675,40 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     usageProfiles: [
       profile('leger', 'Quelques heures par semaine', '⏱️', 2, 3),
       profile('soir', 'Tous les soirs', '🌙', 4, 7),
-      profile('travail', 'Journee de travail', '💼', 8, 5),
+      profile('travail', 'Journée de travail', '💼', 8, 5),
       profile('intense', 'Presque en permanence', '🔁', 12, 7),
     ],
     tips: [],
   },
   {
     id: 'chargeur_telephone',
-    name: 'Telephones & chargeurs',
+    name: 'Téléphones & chargeurs',
     category: 'numerique',
     emoji: '📱',
-    keywords: ['telephone', 'portable', 'chargeur', 'smartphone'],
+    keywords: ['téléphone', 'portable', 'chargeur', 'smartphone'],
     alwaysOn: false,
     basePowerWatts: 10,
     dutyCycle: 1,
     allowQuantity: true,
     defaultUsageProfileId: 'nuit',
-    attributes: [QUANTITY_ATTRIBUTE('telephone', '🔢')],
+    attributes: [QUANTITY_ATTRIBUTE('téléphone', '🔢')],
     usageProfiles: [
       profile('court', 'Une charge rapide', '⚡', 2, 7),
       profile('nuit', 'Toute la nuit', '🌙', 8, 7),
     ],
-    tips: ['Charger le telephone coute quelques centaines de FCFA par an : ce n est pas la priorite.'],
+    tips: ['Charger le téléphone coûte quelques centaines de FCFA par an : ce n’est pas la priorité.'],
   },
   {
     id: 'camera_surveillance',
-    name: 'Camera de surveillance',
+    name: 'Caméra de surveillance',
     category: 'numerique',
     emoji: '📹',
-    keywords: ['camera', 'surveillance', 'securite'],
+    keywords: ['caméra', 'surveillance', 'sécurité'],
     alwaysOn: true,
     basePowerWatts: 8,
     dutyCycle: 1,
     allowQuantity: true,
-    attributes: [QUANTITY_ATTRIBUTE('camera', '🔢')],
+    attributes: [QUANTITY_ATTRIBUTE('caméra', '🔢')],
     tips: [],
   },
 
@@ -718,7 +718,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     name: 'Ampoules',
     category: 'eclairage',
     emoji: '💡',
-    keywords: ['ampoule', 'lampe', 'lumiere', 'eclairage', 'neon'],
+    keywords: ['ampoule', 'lampe', 'lumière', 'eclairage', 'néon'],
     alwaysOn: false,
     basePowerWatts: 10,
     dutyCycle: 1,
@@ -728,20 +728,20 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
       {
         key: 'type',
         label: 'Type',
-        question: 'Quel type d ampoules ?',
+        question: 'Quel type d’ampoules ?',
         emoji: '💡',
         defaultOptionId: 'led',
         options: [
-          { id: 'led', label: 'LED', hint: 'Les modernes, tres economiques', emoji: '✨', watts: 9 },
+          { id: 'led', label: 'LED', hint: 'Les modernes, très économiques', emoji: '✨', watts: 9 },
           { id: 'eco', label: 'Basse consommation', hint: 'En spirale', emoji: '🌀', watts: 20 },
-          { id: 'neon', label: 'Neon / tube', emoji: '📏', watts: 40 },
-          { id: 'filament', label: 'Ancienne a filament', hint: 'Elle chauffe beaucoup', emoji: '🔥', watts: 75 },
+          { id: 'néon', label: 'Néon / tube', emoji: '📏', watts: 40 },
+          { id: 'filament', label: 'Ancienne à filament', hint: 'Elle chauffe beaucoup', emoji: '🔥', watts: 75 },
         ],
       },
       {
         key: 'nombre',
         label: 'Nombre',
-        question: 'Combien d ampoules de ce type ?',
+        question: 'Combien d’ampoules de ce type ?',
         emoji: '🔢',
         defaultOptionId: 'q5',
         options: [
@@ -755,10 +755,10 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     ],
     usageProfiles: [
       profile('court', 'Quelques heures le soir', '🌆', 3, 7),
-      profile('soir', 'Du coucher du soleil a minuit', '🌙', 6, 7),
-      profile('nuit', 'Toute la nuit', '🌃', 12, 7, 'Eclairage de cour ou de securite'),
+      profile('soir', 'Du coucher du soleil à minuit', '🌙', 6, 7),
+      profile('nuit', 'Toute la nuit', '🌃', 12, 7, 'Éclairage de cour ou de sécurité'),
     ],
-    tips: ['Remplacer 10 ampoules a filament par des LED peut faire economiser 5 000 FCFA par mois.'],
+    tips: ['Remplacer 10 ampoules à filament par des LED peut faire économiser 5 000 FCFA par mois.'],
   },
 
   // --------------------------------------------------------------------- EAU
@@ -767,7 +767,7 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
     name: 'Chauffe-eau',
     category: 'eau',
     emoji: '🚿',
-    keywords: ['chauffe-eau', 'ballon', 'douche chaude', 'chauffe eau'],
+    keywords: ['chauffe-eau', 'ballon', 'douche chaude', 'chauffe-eau'],
     alwaysOn: true,
     basePowerWatts: 1500,
     dutyCycle: 0.18,
@@ -780,28 +780,28 @@ export const APPLIANCE_TEMPLATES: ApplianceTemplate[] = [
         emoji: '🚿',
         defaultOptionId: 'ballon',
         options: [
-          { id: 'ballon', label: 'Ballon (cumulus)', hint: 'Il chauffe et garde l eau', emoji: '🛢️', watts: 1500, dutyCycle: 0.18 },
-          { id: 'instantane', label: 'Chauffe-eau instantane', hint: 'Il chauffe au moment de la douche', emoji: '⚡', watts: 3500, dutyCycle: 0.04 },
+          { id: 'ballon', label: 'Ballon (cumulus)', hint: 'Il chauffe et garde l’eau', emoji: '🛢️', watts: 1500, dutyCycle: 0.18 },
+          { id: 'instantané', label: 'Chauffe-eau instantané', hint: 'Il chauffe au moment de la douche', emoji: '⚡', watts: 3500, dutyCycle: 0.04 },
         ],
       },
       {
         key: 'foyer',
         label: 'Usage',
-        question: 'Vous etes combien a l utiliser ?',
+        question: 'Vous êtes combien à l’utiliser ?',
         emoji: '👥',
         defaultOptionId: 'moyen',
         options: [
-          { id: 'petit', label: '1 a 2 personnes', emoji: '👤', factor: 0.7 },
-          { id: 'moyen', label: '3 a 4 personnes', emoji: '👨‍👩‍👦', factor: 1 },
+          { id: 'petit', label: '1 à 2 personnes', emoji: '👤', factor: 0.7 },
+          { id: 'moyen', label: '3 à 4 personnes', emoji: '👨‍👩‍👦', factor: 1 },
           { id: 'grand', label: '5 personnes et plus', emoji: '👨‍👩‍👧‍👦', factor: 1.4 },
         ],
       },
     ],
-    tips: ['Un ballon d eau chaude peut representer un quart de la facture d un foyer.'],
+    tips: ['Un ballon d’eau chaude peut représenter un quart de la facture d’un foyer.'],
   },
   {
     id: 'pompe_eau',
-    name: 'Pompe a eau / surpresseur',
+    name: 'Pompe à eau / surpresseur',
     category: 'eau',
     emoji: '⛲',
     keywords: ['pompe', 'surpresseur', 'forage', 'eau'],

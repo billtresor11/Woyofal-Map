@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // Le front appelle /api : Vite renvoie vers l API en developpement.
+    // Le front appelle /api : Vite renvoie vers l’API en développement.
     proxy: {
       '/api': {
         target: process.env.API_URL ?? 'http://localhost:4000',

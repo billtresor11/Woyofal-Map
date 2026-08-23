@@ -6,10 +6,10 @@ import { ApplianceIcon } from './ApplianceIcon.js';
 import { Segmented, Sheet } from './ui.js';
 
 /**
- * Ecran de configuration d un appareil.
+ * Écran de configuration d’un appareil.
  * Regle absolue : aucune saisie de puissance, aucun watt, aucune formule.
- * L utilisateur repond a des questions ("Il est de quelle taille ?") et voit
- * immediatement l effet en FCFA. Le calcul, lui, se fait cote serveur.
+ * L’utilisateur répond à des questions ("Il est de quelle taille ?") et voit
+ * immédiatement l’effet en FCFA. Le calcul, lui, se fait cote serveur.
  */
 export function ApplianceConfigSheet({
   open,
@@ -41,7 +41,7 @@ export function ApplianceConfigSheet({
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
 
-  // Un attribut "nombre" gere deja la quantite : sinon on affiche un compteur.
+  // Un attribut "nombre" gère déjà la quantité : sinon on affiche un compteur.
   const hasQuantityAttribute = useMemo(
     () => Boolean(template?.attributes.some((attribute) => attribute.key === 'nombre')),
     [template],
@@ -60,7 +60,7 @@ export function ApplianceConfigSheet({
     setError(null);
   }, [open, template, existing]);
 
-  // Apercu en direct : la valeur affichee est le COUT AJOUTE a la facture.
+  // Aperçu en direct : la valeur affichée est le COÛT AJOUTÉ à la facture.
   useEffect(() => {
     if (!open || !template) return;
     const id = ++requestId.current;
@@ -132,8 +132,8 @@ export function ApplianceConfigSheet({
       }
       subtitle={
         template.alwaysOn
-          ? 'Cet appareil tourne 24h/24 : il consomme meme quand vous dormez.'
-          : 'Repondez a ces quelques questions, on s occupe du calcul.'
+          ? 'Cet appareil tourne 24h/24 : il consomme même quand vous dormez.'
+          : 'Répondez à ces quelques questions, on s’occupe du calcul.'
       }
       footer={
         <div className="space-y-3">
@@ -145,13 +145,13 @@ export function ApplianceConfigSheet({
               </button>
             ) : null}
             <button onClick={save} disabled={saving} className="btn-primary flex-1">
-              {saving ? 'Enregistrement...' : existing ? 'Mettre a jour' : "Ajouter a mon inventaire"}
+              {saving ? 'Enregistrement...' : existing ? 'Mettre à jour' : "Ajouter à mon inventaire"}
             </button>
           </div>
         </div>
       }
     >
-      {/* --- Apercu du cout ------------------------------------------------ */}
+      {/* --- Aperçu du coût ------------------------------------------------ */}
       <div className="card mb-5 flex items-center gap-4 px-4 py-4">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-sand-100 text-teal-600">
           <ApplianceIcon templateId={template.id} className="h-9 w-9" />
@@ -172,7 +172,7 @@ export function ApplianceConfigSheet({
         </div>
       </div>
 
-      {/* --- Caracteristiques ---------------------------------------------- */}
+      {/* --- Caractéristiques ---------------------------------------------- */}
       <div className="space-y-5">
         {template.attributes.map((attribute) => (
           <fieldset key={attribute.key}>
@@ -209,10 +209,10 @@ export function ApplianceConfigSheet({
           </fieldset>
         ))}
 
-        {/* --- Duree d usage ------------------------------------------------ */}
+        {/* --- Duree d’usage ------------------------------------------------ */}
         {!template.alwaysOn && template.usageProfiles ? (
           <fieldset>
-            <legend className="mb-2 text-base font-black">⏱️ Vous l utilisez combien de temps ?</legend>
+            <legend className="mb-2 text-base font-black">⏱️ Vous l’utilisez combien de temps ?</legend>
             <div className="space-y-2">
               {template.usageProfiles.map((profile) => {
                 const selected = usageProfileId === profile.id;
@@ -241,7 +241,7 @@ export function ApplianceConfigSheet({
           </fieldset>
         ) : null}
 
-        {/* --- Quantite ------------------------------------------------------ */}
+        {/* --- Quantité ------------------------------------------------------ */}
         {template.allowQuantity && !hasQuantityAttribute ? (
           <div className="card flex items-center justify-between px-4 py-3">
             <span className="text-base font-black">🔢 Combien en avez-vous ?</span>
@@ -266,7 +266,7 @@ export function ApplianceConfigSheet({
         {/* --- Qui paie ? ---------------------------------------------------- */}
         {members.length > 0 ? (
           <div>
-            <p className="mb-2 text-base font-black">👥 Qui l utilise ?</p>
+            <p className="mb-2 text-base font-black">👥 Qui l’utilise ?</p>
             <Segmented
               value={ownership}
               onChange={(value) => setOwnership(value)}
@@ -293,10 +293,10 @@ export function ApplianceConfigSheet({
           </div>
         ) : null}
 
-        {/* --- Piece --------------------------------------------------------- */}
+        {/* --- Pièce --------------------------------------------------------- */}
         {rooms.length > 0 ? (
           <div>
-            <p className="mb-2 text-base font-black">📍 Dans quelle piece ?</p>
+            <p className="mb-2 text-base font-black">📍 Dans quelle pièce ?</p>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setRoomId(null)}
@@ -324,7 +324,7 @@ export function ApplianceConfigSheet({
         {/* --- Conseils ------------------------------------------------------ */}
         {template.tips.length > 0 ? (
           <div className="rounded-2xl bg-mango-400/15 px-4 py-3">
-            <p className="mb-1 text-sm font-black text-mango-600">💡 Bon a savoir</p>
+            <p className="mb-1 text-sm font-black text-mango-600">💡 Bon à savoir</p>
             <ul className="space-y-1">
               {template.tips.map((tip) => (
                 <li key={tip} className="text-sm font-bold leading-snug text-ink-soft">

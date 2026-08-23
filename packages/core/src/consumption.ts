@@ -10,14 +10,14 @@ import type {
  * ---------------------------------------------------------------------------
  * DEDUCTION AUTOMATIQUE DE LA CONSOMMATION
  * ---------------------------------------------------------------------------
- * L'utilisateur clique sur une illustration puis choisit des caracteristiques
+ * L'utilisateur clique sur une illustration puis choisit des caractéristiques
  * en langage courant. Ici on traduit ces choix en kWh :
  *
  *   watts = (puissance imposee par l'option "absolue") x (facteurs correctifs)
- *   kWh/jour = watts x heures/jour x tauxDeFonctionnement x quantite / 1000
+ *   kWh/jour = watts x heures/jour x tauxDeFonctionnement x quantité / 1000
  *              x (jours par semaine / 7)
  *
- * Le "taux de fonctionnement" (duty cycle) est le detail que 90% des
+ * Le "taux de fonctionnement" (duty cycle) est le détail que 90% des
  * calculateurs ratent : un frigo est branche 24h/24 mais son compresseur ne
  * tourne qu'environ 40% du temps. Sans lui, on surestime la facture de 150%.
  */
@@ -41,7 +41,7 @@ export function resolveUsageProfile(
   );
 }
 
-/** Selection par defaut d'un appareil : l'ecran d'ajout doit etre pre-rempli. */
+/** Selection par défaut d'un appareil : l'écran d'ajout doit être pre-rempli. */
 export function defaultSelection(template: ApplianceTemplate): ApplianceSelection {
   const options: Record<string, string> = {};
   for (const attribute of template.attributes) {
@@ -64,7 +64,7 @@ export function computeConsumption(
   let quantity = Math.max(1, Math.round(selection.quantity ?? 1));
   let alwaysOn = template.alwaysOn;
 
-  // 1. Options "absolues" : elles fixent la puissance de reference.
+  // 1. Options "absolues" : elles fixent la puissance de référence.
   for (const attribute of template.attributes) {
     const optionId = selection.options[attribute.key] ?? attribute.defaultOptionId;
     const option = attribute.options.find((o) => o.id === optionId);
@@ -75,7 +75,7 @@ export function computeConsumption(
     if (option.alwaysOn === true) alwaysOn = true;
   }
 
-  // 2. Facteurs correctifs (classe energetique, age, mode eco...), cumulatifs.
+  // 2. Facteurs correctifs (classe énergétique, age, mode eco...), cumulatifs.
   for (const attribute of template.attributes) {
     const optionId = selection.options[attribute.key] ?? attribute.defaultOptionId;
     const option = attribute.options.find((o) => o.id === optionId);
@@ -121,7 +121,7 @@ export interface HouseholdTotals {
   kwhPerMonth: number;
   /** Part des appareils qui tournent 24h/24 (le "socle" du foyer). */
   alwaysOnKwhPerMonth: number;
-  /** Part des appareils que l'on allume et eteint (le levier d'economie). */
+  /** Part des appareils que l'on allume et éteint (le levier d'économie). */
   switchableKwhPerMonth: number;
   alwaysOnSharePercent: number;
   applianceCount: number;

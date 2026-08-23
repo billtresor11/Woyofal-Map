@@ -138,7 +138,7 @@ export async function householdRoutes(app: FastifyInstance) {
     return null;
   });
 
-  // --- Repartition ----------------------------------------------------------
+  // --- Répartition ----------------------------------------------------------
 
   app.get('/api/households/:id/split', async (request) => {
     const { id } = request.params as { id: string };
@@ -159,8 +159,8 @@ export async function householdRoutes(app: FastifyInstance) {
   });
 
   /**
-   * Enregistrer une recharge. Si l utilisateur ne connait que le montant paye,
-   * on deduit les kWh recus en rejouant les tranches deja atteintes ce mois-ci.
+   * Enregistrer une recharge. Si l’utilisateur ne connait que le montant payé,
+   * on déduit les kWh reçus en rejouant les tranches déjà atteintes ce mois-ci.
    */
   app.post('/api/households/:id/topups', async (request, reply) => {
     const { id } = request.params as { id: string };

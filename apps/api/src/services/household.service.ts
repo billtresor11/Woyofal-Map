@@ -39,7 +39,7 @@ export function monthRange(month: string): { start: Date; end: Date; daysElapsed
   return { start, end, daysElapsed, days };
 }
 
-// --- Conversion base de donnees <-> moteur ----------------------------------
+// --- Conversion base de données <-> moteur ----------------------------------
 
 function parseOptions(json: string): Record<string, string> {
   try {
@@ -51,13 +51,13 @@ function parseOptions(json: string): Record<string, string> {
 }
 
 /**
- * Recalcule la consommation a partir des choix de l utilisateur.
+ * Recalcule la consommation a partir des choix de l’utilisateur.
  * Le serveur ne fait jamais confiance aux kWh envoyes par le client :
- * il rejoue le moteur avec le catalogue de reference.
+ * il rejoue le moteur avec le catalogue de référence.
  */
 export function computeFromSelection(selection: ApplianceSelection): ConsumptionResult {
   const template = findTemplate(selection.templateId);
-  if (!template) throw notFound(`L appareil "${selection.templateId}"`);
+  if (!template) throw notFound(`L’appareil "${selection.templateId}"`);
   return computeConsumption(template, selection);
 }
 
@@ -114,7 +114,7 @@ export function rowToApplianceInput(row: ApplianceRow): ApplianceInput {
   };
 }
 
-/** Vue "appareil" telle que la consomme l interface. */
+/** Vue "appareil" telle que la consomme l’interface. */
 export function serializeAppliance(row: ApplianceRow) {
   const template = findTemplate(row.templateId);
   const consumption = rowToConsumption(row);
@@ -138,7 +138,7 @@ export function serializeAppliance(row: ApplianceRow) {
   };
 }
 
-// --- Chargement d un foyer ---------------------------------------------------
+// --- Chargement d’un foyer ---------------------------------------------------
 
 export async function getHouseholdOrThrow(householdId: string) {
   const household = await prisma.household.findUnique({
@@ -158,8 +158,8 @@ export async function getHouseholdOrThrow(householdId: string) {
 }
 
 /**
- * kWh deja consommes dans le mois. On prend le releve reel (recharges Woyofal)
- * s il existe, sinon on prorate l estimation sur les jours ecoules : c est cette
+ * kWh déjà consommés dans le mois. On prend le releve réel (recharges Woyofal)
+ * s’il existe, sinon on prorate l’estimation sur les jours ecoules : c’est cette
  * valeur qui determine la tranche courante, donc le prix marginal du kWh.
  */
 export async function consumedSoFar(
@@ -232,13 +232,13 @@ export async function buildSummary(householdId: string, month = currentMonth()) 
     bill,
     gauge,
     ranking,
-    equivalents: costEquivalents(bill.totalTTC),
+    équivalents: costEquivalents(bill.totalTTC),
     alwaysOn: {
       kwhPerMonth: totals.alwaysOnKwhPerMonth,
       amountPerMonth: alwaysOnAmount,
       sharePercent: totals.alwaysOnSharePercent,
       count: totals.alwaysOnCount,
-      /** Meme si personne n est a la maison, cette somme part chaque mois. */
+      /** Même si personne n’est a la maison, cette somme part chaque mois. */
       averagePricePerKwh: alwaysOnBill.averagePricePerKwh,
       appliances: ranking.filter((item) => item.alwaysOn),
     },
@@ -257,7 +257,7 @@ export async function buildSummary(householdId: string, month = currentMonth()) 
   };
 }
 
-// --- Repartition colocation --------------------------------------------------
+// --- Répartition colocation --------------------------------------------------
 
 export async function buildSplit(householdId: string, month = currentMonth()) {
   const household = await getHouseholdOrThrow(householdId);

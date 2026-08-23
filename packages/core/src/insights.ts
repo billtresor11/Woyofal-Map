@@ -2,8 +2,8 @@ import { computeMonthlyBill, marginalCost } from './billing.js';
 import type { ApplianceInput, TariffPlan } from './types.js';
 
 /**
- * Mise en forme et pedagogie : transformer un nombre de kWh en quelque chose
- * qu on comprend sans etre technicien.
+ * Mise en forme et pédagogie : transformer un nombre de kWh en quelque chose
+ * qu’on comprend sans être technicien.
  */
 
 export function formatFcfa(amount: number): string {
@@ -17,13 +17,13 @@ export interface CostEquivalent {
   count: number;
 }
 
-/** Reperes du quotidien pour donner une echelle a un montant. */
+/** Repères du quotidien pour donner une échelle à un montant. */
 const EQUIVALENTS: Array<{ emoji: string; unit: number; singular: string; plural: string }> = [
-  { emoji: '💧', unit: 50, singular: 'sachet d eau', plural: 'sachets d eau' },
-  { emoji: '🫖', unit: 200, singular: 'verre d ataya', plural: 'verres d ataya' },
+  { emoji: '💧', unit: 50, singular: 'sachet d’eau', plural: 'sachets d’eau' },
+  { emoji: '🫖', unit: 200, singular: 'verre d’ataya', plural: 'verres d’ataya' },
   { emoji: '🥖', unit: 175, singular: 'pain', plural: 'pains' },
   { emoji: '🚌', unit: 250, singular: 'trajet en bus', plural: 'trajets en bus' },
-  { emoji: '📱', unit: 1000, singular: 'credit telephone de 1 000 F', plural: 'credits telephone de 1 000 F' },
+  { emoji: '📱', unit: 1000, singular: 'crédit téléphone de 1 000 F', plural: 'crédits téléphone de 1 000 F' },
   { emoji: '🍚', unit: 4500, singular: 'sac de riz de 5 kg', plural: 'sacs de riz de 5 kg' },
 ];
 
@@ -45,15 +45,15 @@ export interface ApplianceCost {
   templateId: string;
   alwaysOn: boolean;
   kwhPerMonth: number;
-  /** Cout mensuel de cet appareil, au prix moyen du foyer. */
+  /** Coût mensuel de cet appareil, au prix moyen du foyer. */
   amountPerMonth: number;
   sharePercent: number;
 }
 
 /**
- * Classement des appareils par cout. On valorise chaque appareil au prix MOYEN
- * du foyer : sinon le dernier appareil ajoute a la liste porterait a lui seul
- * toute la tranche 3, ce qui n aurait aucun sens pour l utilisateur.
+ * Classement des appareils par coût. On valorise chaque appareil au prix MOYEN
+ * du foyer : sinon le dernier appareil ajouté à la liste porterait à lui seul
+ * toute la tranche 3, ce qui n’aurait aucun sens pour l’utilisateur.
  */
 export function rankAppliances(appliances: ApplianceInput[], plan: TariffPlan): ApplianceCost[] {
   const totalKwh = appliances.reduce((sum, a) => sum + a.consumption.kwhPerMonth, 0);
@@ -79,19 +79,19 @@ export function rankAppliances(appliances: ApplianceInput[], plan: TariffPlan): 
 export interface PunctualEstimate {
   kwh: number;
   amount: number;
-  /** Prix reellement paye pour ce kWh supplementaire, tranche courante incluse. */
+  /** Prix réellement payé pour ce kWh supplementaire, tranche courante incluse. */
   pricePerKwh: number;
   tierLabel: string;
   durationMinutes: number;
-  equivalents: CostEquivalent[];
-  /** Meme session repetee tous les jours pendant un mois. */
+  équivalents: CostEquivalent[];
+  /** Même session repetee tous les jours pendant un mois. */
   monthlyIfDaily: number;
 }
 
 /**
- * Estimateur d action ponctuelle : "combien coute 3h de PlayStation ce soir ?"
- * Le prix depend de la tranche deja atteinte dans le mois : c est tout
- * l interet de passer par `marginalCost`.
+ * Estimateur d’action ponctuelle : "combien coûte 3h de PlayStation ce soir ?"
+ * Le prix depend de la tranche déjà atteinte dans le mois : c’est tout
+ * l’intérêt de passer par `marginalCost`.
  */
 export function estimatePunctual(
   kwh: number,
@@ -108,7 +108,7 @@ export function estimatePunctual(
     pricePerKwh: bill.averagePricePerKwh,
     tierLabel: bill.currentTier.label,
     durationMinutes,
-    equivalents: costEquivalents(bill.totalTTC),
+    équivalents: costEquivalents(bill.totalTTC),
     monthlyIfDaily: dailyMonth.totalTTC,
   };
 }

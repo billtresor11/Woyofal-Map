@@ -13,7 +13,7 @@ describe('catalogue', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('propose une option par defaut valide pour chaque caracteristique', () => {
+  it('propose une option par défaut valide pour chaque caractéristique', () => {
     for (const template of APPLIANCE_TEMPLATES) {
       for (const attribute of template.attributes) {
         const found = attribute.options.some((o) => o.id === attribute.defaultOptionId);
@@ -22,7 +22,7 @@ describe('catalogue', () => {
     }
   });
 
-  it('donne un profil d usage aux appareils qui ne tournent pas 24h/24', () => {
+  it('donne un profil d’usage aux appareils qui ne tournent pas 24h/24', () => {
     for (const template of APPLIANCE_TEMPLATES) {
       if (template.alwaysOn) continue;
       expect(template.usageProfiles?.length, template.id).toBeGreaterThan(0);
@@ -31,7 +31,7 @@ describe('catalogue', () => {
     }
   });
 
-  it('produit une consommation plausible pour chaque appareil par defaut', () => {
+  it('produit une consommation plausible pour chaque appareil par défaut', () => {
     for (const template of APPLIANCE_TEMPLATES) {
       const result = computeConsumption(template, defaultSelection(template));
       expect(result.kwhPerMonth, template.id).toBeGreaterThan(0);
@@ -40,7 +40,7 @@ describe('catalogue', () => {
   });
 });
 
-describe('deduction de consommation', () => {
+describe('déduction de consommation', () => {
   it('applique le taux de fonctionnement du frigo', () => {
     const frigo = getTemplate('refrigerateur');
     const result = computeConsumption(frigo, defaultSelection(frigo));
@@ -51,7 +51,7 @@ describe('deduction de consommation', () => {
     expect(result.kwhPerMonth).toBeCloseTo(36.5, 1);
   });
 
-  it('rend un vieux frigo plus gourmand qu un neuf', () => {
+  it('rend un vieux frigo plus gourmand qu’un neuf', () => {
     const frigo = getTemplate('refrigerateur');
     const base = defaultSelection(frigo);
     const neuf = computeConsumption(frigo, { ...base, options: { ...base.options, etat: 'neuf' } });
@@ -70,7 +70,7 @@ describe('deduction de consommation', () => {
     expect(inverter.kwhPerMonth).toBeLessThan(classique.kwhPerMonth);
   });
 
-  it('multiplie par le nombre d ampoules', () => {
+  it('multiplie par le nombre d’ampoules', () => {
     const ampoules = getTemplate('ampoules');
     const base = defaultSelection(ampoules);
     const cinq = computeConsumption(ampoules, base);
@@ -92,7 +92,7 @@ describe('deduction de consommation', () => {
   it('calcule une session ponctuelle de 3h de PlayStation', () => {
     const console = getTemplate('console_jeu');
     const base = defaultSelection(console);
-    const kwh = computePunctualKwh(console, { ...base, options: { modele: 'ps5' } }, 180);
+    const kwh = computePunctualKwh(console, { ...base, options: { modèle: 'ps5' } }, 180);
     // 210 W x 3 h = 0,63 kWh
     expect(kwh).toBeCloseTo(0.63, 2);
   });
@@ -100,7 +100,7 @@ describe('deduction de consommation', () => {
 
 describe('totaux du foyer', () => {
   it('isole les appareils qui tournent 24h/24', () => {
-    const items = ['refrigerateur', 'box_internet', 'televiseur'].map((id) => {
+    const items = ['refrigerateur', 'box_internet', 'téléviseur'].map((id) => {
       const template = getTemplate(id);
       return computeConsumption(template, defaultSelection(template));
     });

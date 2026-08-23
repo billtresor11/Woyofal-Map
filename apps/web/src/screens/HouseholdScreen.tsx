@@ -9,8 +9,8 @@ const AVATARS = ['👩🏾', '👨🏾', '👧🏾', '👦🏾', '👵🏾', '�
 
 /**
  * ONGLET 3 - Colocation / famille.
- * L objectif n est pas de surveiller les gens, c est d eviter la dispute de fin
- * de mois : chacun voit ce qu il doit, et surtout POURQUOI il le doit.
+ * L’objectif n’est pas de surveiller les gens, c’est d’éviter la dispute de fin
+ * de mois : chacun voit ce qu’il doit, et surtout POURQUOI il le doit.
  */
 export function HouseholdScreen() {
   const { summary, refresh } = useApp();
@@ -53,11 +53,11 @@ export function HouseholdScreen() {
             title="Ajoutez les personnes du foyer"
             action={
               <button onClick={() => setMemberSheet(true)} className="btn-primary mt-2">
-                ➕ Ajouter quelqu un
+                ➕ Ajouter quelqu’un
               </button>
             }
           >
-            L application repartira la facture entre elles, en separant les appareils communs des
+            L’application répartira la facture entre elles, en séparant les appareils communs des
             appareils personnels.
           </EmptyState>
         ) : null}
@@ -67,19 +67,19 @@ export function HouseholdScreen() {
         {split && summary.members.length > 0 ? (
           <>
             <div className="card px-5 py-5 text-center">
-              <p className="text-sm font-bold text-ink-soft">Total du foyer a partager</p>
+              <p className="text-sm font-bold text-ink-soft">Total du foyer à partager</p>
               <p className="text-4xl font-black tabular-nums">{fcfa(split.totalAmount)}</p>
               <p className="mt-1 text-sm font-bold text-ink-muted">
                 {fmtKwh(split.totalKwh)} · {fcfa(split.averagePricePerKwh)} le kWh en moyenne
               </p>
               <p className="mt-2 inline-block rounded-full bg-sand-100 px-3 py-1 text-xs font-bold text-ink-soft">
                 {split.basis === 'recharges'
-                  ? `Base sur vos recharges reelles (${fcfa(split.rechargedAmount)})`
-                  : 'Base sur l estimation de votre inventaire'}
+                  ? `Base sur vos recharges réelles (${fcfa(split.rechargedAmount)})`
+                  : 'Basé sur l’estimation de votre inventaire'}
               </p>
             </div>
 
-            {/* --- Repartition ---------------------------------------------- */}
+            {/* --- Répartition ---------------------------------------------- */}
             <section className="space-y-3">
               {split.members.map((member) => (
                 <div key={member.memberId} className="card overflow-hidden">
@@ -145,17 +145,17 @@ export function HouseholdScreen() {
 
             {split.unassignedKwh > 0.1 ? (
               <p className="px-2 text-center text-xs font-bold text-ink-muted">
-                {fmtKwh(split.unassignedKwh)} ne sont attribues a personne. Ajoutez des membres pour
-                les repartir.
+                {fmtKwh(split.unassignedKwh)} ne sont attribués à personne. Ajoutez des membres pour
+                les répartir.
               </p>
             ) : null}
 
             <div className="rounded-3xl bg-sand-100 px-4 py-4">
               <p className="mb-1 text-sm font-black">⚖️ Comment on partage</p>
               <ul className="space-y-1 text-sm font-bold leading-snug text-ink-soft">
-                <li>• Les appareils communs sont partages selon le temps de presence de chacun.</li>
-                <li>• Les appareils personnels sont a la charge de leur proprietaire.</li>
-                <li>• Les kWh sont comptes au prix moyen du foyer, pas au prix de la derniere tranche.</li>
+                <li>• Les appareils communs sont partagés selon le temps de présence de chacun.</li>
+                <li>• Les appareils personnels sont à la charge de leur propriétaire.</li>
+                <li>• Les kWh sont comptés au prix moyen du foyer, pas au prix de la dernière tranche.</li>
               </ul>
             </div>
 
@@ -216,7 +216,7 @@ export function HouseholdScreen() {
   );
 }
 
-/** Le curseur de presence : "j etais la combien de temps ce mois-ci ?" */
+/** Le curseur de présence : "j’étais là combien de temps ce mois-ci ?" */
 function PresenceSlider({
   memberId,
   initial,
@@ -237,7 +237,7 @@ function PresenceSlider({
   return (
     <div className="border-t border-sand-200 px-4 py-3">
       <div className="flex items-center justify-between text-xs font-bold text-ink-soft">
-        <span>🗓️ Present ce mois-ci</span>
+        <span>🗓️ Présent ce mois-ci</span>
         <span>{Math.round(value * 100)}%</span>
       </div>
       <input
@@ -250,7 +250,7 @@ function PresenceSlider({
         onMouseUp={() => commit(value)}
         onTouchEnd={() => commit(value)}
         className="mt-1 w-full accent-teal-500"
-        aria-label="Temps de presence"
+        aria-label="Temps de présence"
       />
     </div>
   );
@@ -288,7 +288,7 @@ function AddMemberSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Ajouter quelqu un"
+      title="Ajouter quelqu’un"
       subtitle="Un colocataire, un parent, un enfant."
       footer={
         <button onClick={save} disabled={saving || !name.trim()} className="btn-primary w-full">
@@ -299,7 +299,7 @@ function AddMemberSheet({
       <input
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder="Son prenom"
+        placeholder="Son prénom"
         className="mb-4 w-full rounded-2xl border-2 border-transparent bg-white px-4 py-3 text-base font-bold shadow-card outline-none focus:border-teal-500"
       />
       <p className="mb-2 text-sm font-black">Choisir un avatar</p>
@@ -355,14 +355,14 @@ function TopUpSheet({
       open={open}
       onClose={onClose}
       title="Enregistrer une recharge"
-      subtitle="Vos recharges reelles remplacent l estimation : le partage devient exact."
+      subtitle="Vos recharges réelles remplacent l’estimation : le partage devient exact."
       footer={
         <button onClick={save} disabled={saving} className="btn-primary w-full">
           Enregistrer
         </button>
       }
     >
-      <p className="mb-2 text-sm font-black">Montant paye</p>
+      <p className="mb-2 text-sm font-black">Montant payé</p>
       <div className="mb-4 flex flex-wrap gap-2">
         {[1000, 2000, 5000, 10000, 20000].map((value) => (
           <button
@@ -383,11 +383,11 @@ function TopUpSheet({
         onChange={(event) => setAmount(Number(event.target.value))}
         className="mb-5 w-full rounded-2xl border-2 border-transparent bg-white px-4 py-3 text-base font-bold shadow-card outline-none focus:border-teal-500"
       />
-      <p className="mb-2 text-sm font-black">kWh recus (si le recu les indique)</p>
+      <p className="mb-2 text-sm font-black">kWh reçus (si le reçu les indique)</p>
       <input
         value={kwhValue}
         onChange={(event) => setKwhValue(event.target.value)}
-        placeholder="Laissez vide, on les deduira"
+        placeholder="Laissez vide, on les déduira"
         inputMode="decimal"
         className="w-full rounded-2xl border-2 border-transparent bg-white px-4 py-3 text-base font-bold shadow-card outline-none focus:border-teal-500"
       />

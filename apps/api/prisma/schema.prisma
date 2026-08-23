@@ -1,12 +1,12 @@
 // ---------------------------------------------------------------------------
-// Woyofal Map - Schema de base de donnees
+// Woyofal Map - Schema de base de données
 // ---------------------------------------------------------------------------
-// SQLite en developpement (zero installation), PostgreSQL en production :
-// il suffit de changer `provider` et `DATABASE_URL`. Aucun type exotique n est
+// SQLite en développement (zéro installation), PostgreSQL en production :
+// il suffit de changer `provider` et `DATABASE_URL`. Aucun type exotique n’est
 // utilise pour que la bascule soit sans douleur.
 //
-// Note : SQLite ne gere ni les enums ni le type Json cote Prisma. Les champs
-// concernes sont donc des chaines (avec valeurs documentees) et du JSON encode
+// Note : SQLite ne gère ni les enums ni le type Json cote Prisma. Les champs
+// concernés sont donc des chaines (avec valeurs documentees) et du JSON encodé
 // en texte. En PostgreSQL, ils peuvent devenir des enums / jsonb sans toucher
 // au code applicatif.
 
@@ -19,16 +19,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Le foyer : l unite de facturation, rattachee a un compteur.
+/// Le foyer : l’unite de facturation, rattachée a un compteur.
 model Household {
   id            String   @id @default(cuid())
   name          String
-  /// Code de la grille tarifaire appliquee (voir TariffPlan).
+  /// Code de la grille tarifaire appliquée (voir TariffPlan).
   tariffCode    String   @default("WOYOFAL_DPP")
   /// PREPAID (Woyofal) | POSTPAID (facture papier)
   meterType     String   @default("PREPAID")
   subscribedKva Int      @default(5)
-  /// Objectif de budget mensuel en FCFA, pour l alerte "je vais depasser".
+  /// Objectif de budget mensuel en FCFA, pour l’alerte "je vais dépasser".
   monthlyBudget Int?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -47,7 +47,7 @@ model Member {
   name          String
   emoji         String   @default("🙂")
   color         String   @default("#0EA5E9")
-  /// Part de presence sur le mois (0 a 1). 0,5 = absent la moitie du mois.
+  /// Part de présence sur le mois (0 a 1). 0,5 = absent la moitié du mois.
   presenceRatio Float    @default(1)
   createdAt     DateTime @default(now())
 
@@ -59,13 +59,13 @@ model Member {
   @@index([householdId])
 }
 
-/// Une piece de la maison : sert a distinguer "salon" (commun) de "chambre" (prive).
+/// Une pièce de la maison : sert a distinguer "salon" (commun) de "chambre" (privé).
 model Room {
   id          String @id @default(cuid())
   householdId String
   name        String
   emoji       String @default("🚪")
-  /// SHARED (piece commune) | PRIVATE (chambre)
+  /// SHARED (pièce commune) | PRIVATE (chambre)
   kind        String @default("SHARED")
 
   household  Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
@@ -75,7 +75,7 @@ model Room {
 }
 
 /// Miroir en base du catalogue visuel (packages/core/src/catalog.ts).
-/// Permet d ajouter ou de corriger un appareil sans redeployer l application.
+/// Permet d’ajouter ou de corriger un appareil sans redeployer l’application.
 model ApplianceTemplate {
   id             String  @id
   name           String
@@ -84,33 +84,33 @@ model ApplianceTemplate {
   alwaysOn       Boolean @default(false)
   basePowerWatts Float
   dutyCycle      Float   @default(1)
-  /// Caracteristiques et profils d usage, encodes en JSON.
+  /// Caractéristiques et profils d’usage, encodés en JSON.
   definition     String
   version        Int     @default(1)
 
   appliances Appliance[]
 }
 
-/// Un appareil reellement possede par un foyer, avec les choix de l utilisateur.
+/// Un appareil réellement possède par un foyer, avec les choix de l’utilisateur.
 model Appliance {
   id          String @id @default(cuid())
   householdId String
   templateId  String
   label       String
 
-  /// Choix de l utilisateur : { "taille": "moyen", "etat": "vieux" }
+  /// Choix de l’utilisateur : { "taille": "moyen", "etat": "vieux" }
   optionsJson   String @default("{}")
   usageProfileId String?
   quantity      Int    @default(1)
 
-  /// SHARED (commun a tout le foyer) | PRIVATE (a la charge d une personne)
+  /// SHARED (commun a tout le foyer) | PRIVATE (a la charge d’une personne)
   ownership String  @default("SHARED")
   ownerId   String?
   roomId    String?
 
-  // --- Resultats du calcul, figes a l enregistrement -----------------------
+  // --- Résultats du calcul, figés a l’enregistrement -----------------------
   // Denormalises volontairement : les listes et les totaux se lisent sans
-  // rejouer le moteur, et l historique reste stable si le catalogue evolue.
+  // rejouer le moteur, et l’historique reste stable si le catalogue évolue.
   watts       Float
   dutyCycle   Float
   hoursPerDay Float
@@ -133,7 +133,7 @@ model Appliance {
   @@index([templateId])
 }
 
-/// Ponderation fine d un appareil commun (ex : la clim du salon, utilisee
+/// Pondération fine d’un appareil commun (ex : la clim du salon, utilisee
 /// surtout par deux personnes sur quatre).
 model ApplianceShare {
   applianceId String
@@ -146,7 +146,7 @@ model ApplianceShare {
   @@id([applianceId, memberId])
 }
 
-/// Une utilisation ponctuelle simulee puis enregistree ("3h de PlayStation").
+/// Une utilisation ponctuelle simulée puis enregistrée ("3h de PlayStation").
 model PunctualSession {
   id              String   @id @default(cuid())
   householdId     String
@@ -165,7 +165,7 @@ model PunctualSession {
   @@index([householdId, occurredAt])
 }
 
-/// Une recharge Woyofal : permet de comparer l estimation a la realite.
+/// Une recharge Woyofal : permet de comparer l’estimation a la réalité.
 model TopUp {
   id          String   @id @default(cuid())
   householdId String
@@ -178,13 +178,13 @@ model TopUp {
   @@index([householdId, purchasedAt])
 }
 
-/// Grille tarifaire Senelec, versionnee et modifiable par l utilisateur.
+/// Grille tarifaire Senelec, versionnée et modifiable par l’utilisateur.
 model TariffPlan {
   code              String  @id
   label             String
   description       String
   meterType         String
-  /// 1 = tranches remises a zero chaque mois (Woyofal), 2 = facture bimestrielle.
+  /// 1 = tranches remises a zéro chaque mois (Woyofal), 2 = facture bimestrielle.
   periodMonths      Int     @default(1)
   minKva            Int     @default(1)
   maxKva            Int?

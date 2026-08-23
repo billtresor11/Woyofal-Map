@@ -3,7 +3,7 @@ import { prisma } from './db.js';
 
 /**
  * Seed : recopie le catalogue et les grilles tarifaires du moteur vers la base,
- * puis cree un foyer de demonstration pour que l application ne soit jamais vide.
+ * puis créé un foyer de démonstration pour que l’application ne soit jamais vide.
  */
 async function seedTariffs() {
   for (const plan of TARIFF_PLANS) {
@@ -75,15 +75,15 @@ async function seedTemplates() {
 }
 
 async function seedDemoHousehold() {
-  const existing = await prisma.household.findFirst({ where: { name: 'Maison Demo (Dakar)' } });
+  const existing = await prisma.household.findFirst({ where: { name: 'Maison Démo (Dakar)' } });
   if (existing) {
-    console.log('  foyer de demonstration : deja present');
+    console.log('  foyer de démonstration : déjà présent');
     return existing.id;
   }
 
   const household = await prisma.household.create({
     data: {
-      name: 'Maison Demo (Dakar)',
+      name: 'Maison Démo (Dakar)',
       tariffCode: 'WOYOFAL_DPP',
       meterType: 'PREPAID',
       subscribedKva: 5,
@@ -119,16 +119,16 @@ async function seedDemoHousehold() {
     roomId?: string | null;
   }> = [
     { templateId: 'refrigerateur', options: { taille: 'moyen', etat: 'moyen' }, ownership: 'SHARED', roomId: salon?.id },
-    { templateId: 'televiseur', options: { taille: 'p43' }, usageProfileId: 'soir', ownership: 'SHARED', roomId: salon?.id },
+    { templateId: 'téléviseur', options: { taille: 'p43' }, usageProfileId: 'soir', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'decodeur', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'box_internet', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'ampoules', options: { type: 'led', nombre: 'q8' }, usageProfileId: 'soir', ownership: 'SHARED' },
     { templateId: 'ventilateur', options: { type: 'pied', nombre: 'q2' }, usageProfileId: 'nuit', ownership: 'SHARED' },
     { templateId: 'fer_repasser', usageProfileId: 'hebdo', ownership: 'SHARED' },
-    { templateId: 'machine_laver', options: { programme: 'froid', sechage: 'non' }, usageProfileId: 'deux', ownership: 'SHARED' },
+    { templateId: 'machine_laver', options: { programme: 'froid', séchage: 'non' }, usageProfileId: 'deux', ownership: 'SHARED' },
     {
       templateId: 'climatiseur',
-      options: { puissance: 'cv1_5', techno: 'classique', reglage: 'moyen' },
+      options: { puissance: 'cv1_5', techno: 'classique', réglage: 'moyen' },
       usageProfileId: 'nuit',
       ownership: 'PRIVATE',
       ownerId: awa?.id,
@@ -169,7 +169,7 @@ async function seedDemoHousehold() {
     });
   }
 
-  console.log(`  foyer de demonstration : ${household.id} (${demoAppliances.length} appareils)`);
+  console.log(`  foyer de démonstration : ${household.id} (${demoAppliances.length} appareils)`);
   return household.id;
 }
 
@@ -178,7 +178,7 @@ async function main() {
   await seedTariffs();
   await seedTemplates();
   await seedDemoHousehold();
-  console.log('Termine.');
+  console.log('Terminé.');
 }
 
 main()

@@ -6,9 +6,9 @@ import { useApp } from '../hooks/useApp.js';
 import { fcfa } from '../lib/format.js';
 
 /**
- * Reglages. Le point important : les prix Senelec sont MODIFIABLES.
- * Les grilles evoluent ; plutot que de figer des chiffres dans le code, on
- * laisse l utilisateur recopier ceux de son recu. L application reste juste.
+ * Réglages. Le point important : les prix Senelec sont MODIFIABLES.
+ * Les grilles évoluent ; plutot que de figer des chiffres dans le code, on
+ * laisse l’utilisateur recopier ceux de son reçu. L’application reste juste.
  */
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { summary, refresh, reset } = useApp();
@@ -46,7 +46,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         monthlyBudget: budget ? Number(budget.replace(/\D/g, '')) : null,
       });
       await api.patch(`/api/tariffs/${summary!.plan.code}`, {
-        source: 'Prix saisis par l utilisateur d apres son recu',
+        source: 'Prix saisis par l’utilisateur d’après son reçu',
         tiers: Object.entries(prices).map(([position, value]) => ({
           position: Number(position),
           pricePerKwh: Number(String(value).replace(',', '.')),
@@ -63,11 +63,11 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
     <Sheet
       open={open}
       onClose={onClose}
-      title="Reglages"
+      title="Réglages"
       subtitle={summary.household.name}
       footer={
         <button onClick={save} disabled={saving} className="btn-primary w-full">
-          {saving ? 'Enregistrement...' : saved ? 'Enregistre ✓' : 'Enregistrer'}
+          {saving ? 'Enregistrement...' : saved ? 'Enregistré ✓' : 'Enregistrer'}
         </button>
       }
     >
@@ -99,7 +99,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           <p className="mb-1 text-base font-black">💰 Le prix du kWh</p>
           <p className="mb-3 text-xs font-bold leading-snug text-ink-muted">
             Ces prix viennent de la grille domestique Senelec. Ils changent parfois : prenez votre
-            dernier recu Woyofal et corrigez-les ici pour une estimation exacte.
+            dernier reçu Woyofal et corrigez-les ici pour une estimation exacte.
           </p>
           <div className="space-y-2">
             {summary.plan.tiers.map((tier) => (
@@ -107,7 +107,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                 <div className="flex-1">
                   <p className="text-sm font-extrabold">{tier.label}</p>
                   <p className="text-xs font-bold text-ink-muted">
-                    de {tier.fromKwh} a {tier.toKwh ?? '∞'} kWh
+                    de {tier.fromKwh} à {tier.toKwh ?? '∞'} kWh
                     {tier.vatExempt ? ' · sans TVA' : ''}
                   </p>
                 </div>
@@ -124,7 +124,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             ))}
           </div>
           <p className="mt-2 text-xs font-bold text-ink-muted">
-            TVA appliquee : {Math.round(summary.plan.vatRate * 100)}%
+            TVA appliquée : {Math.round(summary.plan.vatRate * 100)}%
             {summary.plan.fixedFeePerMonth > 0
               ? ` · redevance ${fcfa(summary.plan.fixedFeePerMonth)} par mois`
               : ''}
@@ -143,7 +143,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         </section>
 
         <section>
-          <p className="mb-2 text-base font-black">🧹 Repartir de zero</p>
+          <p className="mb-2 text-base font-black">🧹 Repartir de zéro</p>
           <button
             onClick={() => {
               reset();
@@ -154,7 +154,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             Quitter ce foyer sur cet appareil
           </button>
           <p className="mt-2 text-xs font-bold text-ink-muted">
-            Les donnees du foyer restent sur le serveur : vous pourrez y revenir.
+            Les données du foyer restent sur le serveur : vous pourrez y revenir.
           </p>
         </section>
       </div>

@@ -5,8 +5,8 @@ import { useApp } from '../hooks/useApp.js';
 const AVATARS = ['👩🏾', '👨🏾', '👧🏾', '👦🏾', '👵🏾', '🧑🏾'];
 
 /**
- * Premier ecran. Trois questions, pas une de plus : le nom du foyer, le type de
- * compteur, et qui habite la. Tout le reste se decouvre en utilisant l application.
+ * Premier écran. Trois questions, pas une de plus : le nom du foyer, le type de
+ * compteur, et qui habite la. Tout le reste se decouvre en utilisant l’application.
  */
 export function Onboarding() {
   const { selectHousehold } = useApp();
@@ -33,7 +33,7 @@ export function Onboarding() {
       });
       selectHousehold(household.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Creation impossible.');
+      setError(err instanceof Error ? err.message : 'Création impossible.');
       setSaving(false);
     }
   }
@@ -44,12 +44,12 @@ export function Onboarding() {
         <p className="text-5xl">💡</p>
         <h1 className="mt-3 text-3xl font-black leading-tight">Woyofal Map</h1>
         <p className="mt-1 text-base font-bold text-white/85">
-          Comprenez votre facture d electricite. En FCFA, sans jargon.
+          Comprenez votre facture d’électricité. En FCFA, sans jargon.
         </p>
 
         <div className="mt-8 space-y-5 rounded-4xl bg-white p-5 text-ink shadow-card">
           <div>
-            <label className="mb-2 block text-base font-black">🏠 Comment s appelle votre maison ?</label>
+            <label className="mb-2 block text-base font-black">🏠 Comment s’appelle votre maison ?</label>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
@@ -79,7 +79,7 @@ export function Onboarding() {
               >
                 <span className="block text-2xl">📄</span>
                 <span className="mt-1 block text-sm font-extrabold">Facture</span>
-                <span className="block text-xs font-bold text-ink-muted">Je recois une facture</span>
+                <span className="block text-xs font-bold text-ink-muted">Je reçois une facture</span>
               </button>
             </div>
           </div>
@@ -99,7 +99,7 @@ export function Onboarding() {
                         prev.map((item, i) => (i === index ? event.target.value : item)),
                       )
                     }
-                    placeholder="Prenom"
+                    placeholder="Prénom"
                     className="flex-1 rounded-2xl bg-sand-50 px-4 py-3 text-base font-bold outline-none ring-2 ring-transparent focus:ring-teal-500"
                   />
                   {people.length > 1 ? (
@@ -140,13 +140,13 @@ export function Onboarding() {
           {error ? <p className="text-sm font-bold text-tier3">{error}</p> : null}
 
           <button onClick={create} disabled={saving} className="btn-primary w-full">
-            {saving ? 'Creation...' : "C'est parti 🚀"}
+            {saving ? 'Création...' : "C’est parti 🚀"}
           </button>
         </div>
 
         <p className="mt-5 text-center text-xs font-bold leading-relaxed text-white/70">
-          Vos donnees restent sur votre appareil et sur votre serveur. Aucune information n est
-          transmise a la Senelec.
+          Vos données restent sur votre appareil et sur votre serveur. Aucune information n’est
+          transmise à la Senelec.
         </p>
       </div>
     </div>

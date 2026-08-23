@@ -22,7 +22,7 @@ const punctualSchema = z.object({
   householdId: z.string().optional(),
   tariffCode: z.string().optional(),
   memberId: z.string().nullish(),
-  /** true = on enregistre la session pour l inclure dans la repartition du mois. */
+  /** true = on enregistre la session pour l’inclure dans la répartition du mois. */
   save: z.boolean().default(false),
   label: z.string().max(60).optional(),
 });
@@ -35,14 +35,14 @@ const rechargeSchema = z.object({
 
 export async function estimateRoutes(app: FastifyInstance) {
   /**
-   * Onglet 2 : "Quel est le cout d une session de 3h de PlayStation ?"
-   * Le prix depend de la tranche deja atteinte dans le mois : on la recupere
+   * Onglet 2 : "Quel est le coût d’une session de 3h de PlayStation ?"
+   * Le prix depend de la tranche déjà atteinte dans le mois : on la récupère
    * du foyer quand il est connu.
    */
   app.post('/api/estimate/punctual', async (request) => {
     const body = parse(punctualSchema, request.body);
     const template = findTemplate(body.templateId);
-    if (!template) throw notFound(`L appareil "${body.templateId}"`);
+    if (!template) throw notFound(`L’appareil "${body.templateId}"`);
 
     const base = defaultSelection(template);
     const selection = {
@@ -90,7 +90,7 @@ export async function estimateRoutes(app: FastifyInstance) {
     };
   });
 
-  /** "Avec 5 000 FCFA de recharge, je recois combien de kWh ?" */
+  /** "Avec 5 000 FCFA de recharge, je reçois combien de kWh ?" */
   app.post('/api/estimate/recharge', async (request) => {
     const body = parse(rechargeSchema, request.body);
     let previousKwh = 0;

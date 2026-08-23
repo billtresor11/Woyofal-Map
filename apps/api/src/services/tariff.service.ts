@@ -27,8 +27,8 @@ type PlanRow = {
 };
 
 /**
- * La grille tarifaire vit en base (donc modifiable par l utilisateur), mais
- * l algorithme, lui, vit dans @woyofal/core. On convertit l une vers l autre.
+ * La grille tarifaire vit en base (donc modifiable par l’utilisateur), mais
+ * l’algorithme, lui, vit dans @woyofal/core. On convertit l’une vers l’autre.
  */
 function toCorePlan(row: PlanRow): TariffPlan {
   return {

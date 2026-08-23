@@ -15,24 +15,24 @@ const DURATIONS = [
   { minutes: 180, label: '3 h' },
   { minutes: 300, label: '5 h' },
   { minutes: 480, label: 'Une nuit' },
-  { minutes: 720, label: 'Une journee' },
+  { minutes: 720, label: 'Une journée' },
 ];
 
 const AMOUNTS = [1000, 2000, 5000, 10000, 20000];
 
 /**
- * ONGLET 2 - Estimateur d action ponctuelle.
- * "Combien coute 3h de PlayStation ce soir ?" - et la reponse tient compte de
- * la tranche deja atteinte dans le mois, donc du vrai prix marginal du kWh.
+ * ONGLET 2 - Estimateur d’action ponctuelle.
+ * "Combien coûte 3h de PlayStation ce soir ?" - et la réponse tient compte de
+ * la tranche déjà atteinte dans le mois, donc du vrai prix marginal du kWh.
  */
 export function EstimatorScreen() {
   const [mode, setMode] = useState<'action' | 'recharge'>('action');
   return (
     <div className="min-h-screen pb-28">
       <header className="bg-white px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
-        <h1 className="text-2xl font-black leading-tight">Combien ca coute ?</h1>
+        <h1 className="text-2xl font-black leading-tight">Combien ça coûte ?</h1>
         <p className="mt-0.5 text-sm font-bold text-ink-soft">
-          Une reponse en FCFA avant d appuyer sur le bouton.
+          Une réponse en FCFA avant d’appuyer sur le bouton.
         </p>
         <div className="mt-4">
           <Segmented
@@ -160,11 +160,11 @@ function ActionEstimator() {
             <p className="mt-1 text-sm font-bold text-white/80">
               {fmtKwh(result.estimate.kwh)} · {result.estimate.tierLabel}
             </p>
-            {result.estimate.equivalents.length > 0 ? (
+            {result.estimate.équivalents.length > 0 ? (
               <div className="mt-3 flex flex-wrap justify-center gap-2">
-                {result.estimate.equivalents.map((equivalent) => (
-                  <span key={equivalent.label} className="chip bg-white/15 text-white">
-                    {equivalent.emoji} {equivalent.count} {equivalent.label}
+                {result.estimate.équivalents.map((équivalent) => (
+                  <span key={équivalent.label} className="chip bg-white/15 text-white">
+                    {équivalent.emoji} {équivalent.count} {équivalent.label}
                   </span>
                 ))}
               </div>
@@ -179,9 +179,9 @@ function ActionEstimator() {
             />
             <Fact
               emoji="🎚️"
-              label="Prix reel du kWh en ce moment"
+              label="Prix réel du kWh en ce moment"
               value={`${fcfa(result.estimate.pricePerKwh)} / kWh`}
-              hint={`Vous avez deja consomme environ ${fmtKwh(result.previousKwh)} ce mois-ci.`}
+              hint={`Vous avez déjà consommé environ ${fmtKwh(result.previousKwh)} ce mois-ci.`}
             />
           </div>
 
@@ -214,7 +214,7 @@ function ActionEstimator() {
             </div>
             {savedFor ? (
               <p className="mt-2 text-xs font-bold text-teal-600">
-                Enregistre : cette session apparaitra dans le partage du mois.
+                Enregistré : cette session apparaîtra dans le partage du mois.
               </p>
             ) : null}
           </div>
@@ -298,13 +298,13 @@ function RechargeEstimator() {
             emoji="🗓️"
             label="Cela devrait tenir environ"
             value={days > 0 ? `${Math.round(days)} jour${Math.round(days) > 1 ? 's' : ''}` : '—'}
-            hint="D apres votre inventaire d appareils."
+            hint="D’après votre inventaire d’appareils."
           />
           <Fact
             emoji="📉"
-            label="Deja consomme ce mois-ci"
+            label="Déjà consommé ce mois-ci"
             value={result ? fmtKwh(result.previousKwh) : '—'}
-            hint="Plus vous avez consomme, moins la recharge donne de kWh : c est l effet des tranches."
+            hint="Plus vous avez consommé, moins la recharge donne de kWh : c’est l’effet des tranches."
           />
         </div>
       </div>

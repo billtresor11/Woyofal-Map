@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 
-/** Feuille qui remonte du bas : le geste le plus naturel sur telephone. */
+/** Feuille qui remonte du bas : le geste le plus naturel sur téléphone. */
 export function Sheet({
   open,
   onClose,

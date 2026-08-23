@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 
 /**
  * Illustrations des appareils.
- * Dessinees en SVG plutot qu en images : nettes sur tous les ecrans, quelques
+ * Dessinees en SVG plutot qu’en images : nettes sur tous les écrans, quelques
  * octets chacune (donc rapides en 3G), et elles prennent la couleur de la
- * categorie sans avoir a exporter dix variantes.
+ * catégorie sans avoir à exporter dix variantes.
  */
 
 const ICONS: Record<string, ReactNode> = {
@@ -38,7 +38,7 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M32 41v10M24 55h16l-3-4H27z" />
     </>
   ),
-  televiseur: (
+  téléviseur: (
     <>
       <rect x="7" y="11" width="50" height="33" rx="4" />
       <path d="M26 51h12M32 44v7" />

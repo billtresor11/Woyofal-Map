@@ -11,14 +11,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "setup": "npm install && npm run db:setup && npm run build:core",
+    "setup": "npm install && npm run env:init && npm run build:core && npm run db:setup",
     "db:setup": "npm run -w @woyofal/api db:push && npm run -w @woyofal/api db:seed",
     "build:core": "npm run -w @woyofal/core build",
     "dev": "npm run build:core && concurrently -n API,WEB -c green,cyan \"npm run -w @woyofal/api dev\" \"npm run -w @woyofal/web dev\"",
     "build": "npm run -w @woyofal/core build && npm run -w @woyofal/api build && npm run -w @woyofal/web build",
     "start": "npm run -w @woyofal/api start",
     "test": "npm run -w @woyofal/core test",
-    "typecheck": "npm run -w @woyofal/core typecheck && npm run -w @woyofal/api typecheck && npm run -w @woyofal/web typecheck"
+    "typecheck": "npm run -w @woyofal/core typecheck && npm run -w @woyofal/api typecheck && npm run -w @woyofal/web typecheck",
+    "env:init": "node -e \"const fs=require('fs');if(!fs.existsSync('apps/api/.env')){fs.copyFileSync('apps/api/.env.example','apps/api/.env');console.log('apps/api/.env cree a partir de .env.example')}\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

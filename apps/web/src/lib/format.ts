@@ -32,8 +32,8 @@ export function tierColor(order: number): string {
 export function monthLabel(month: string): string {
   const [year, monthPart] = month.split('-');
   const names = [
-    'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre',
+    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
   ];
   const index = Number(monthPart) - 1;
   return `${names[index] ?? ''} ${year}`;

@@ -32,7 +32,7 @@ export async function applianceRoutes(app: FastifyInstance) {
     await getHouseholdOrThrow(id);
 
     const template = findTemplate(body.templateId);
-    if (!template) throw notFound(`L appareil "${body.templateId}"`);
+    if (!template) throw notFound(`L’appareil "${body.templateId}"`);
 
     const consumption = computeFromSelection({
       templateId: body.templateId,

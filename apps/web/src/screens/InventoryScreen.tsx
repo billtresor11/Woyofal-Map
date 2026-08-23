@@ -10,10 +10,10 @@ import { fcfa, kwh as fmtKwh } from '../lib/format.js';
 
 /**
  * ONGLET 1 - Inventaire visuel.
- * Deux blocs volontairement separes :
- *   - "Ca tourne tout seul" : le socle 24h/24, invisible et incompressible ;
- *   - "Vous les allumez"    : ce sur quoi l utilisateur peut vraiment agir.
- * C est cette separation qui transforme une facture subie en decisions.
+ * Deux blocs volontairement séparés :
+ *   - "Ça tourne tout seul" : le socle 24h/24, invisible et incompressible ;
+ *   - "Vous les allumez"    : ce sur quoi l’utilisateur peut vraiment agir.
+ * C’est cette séparation qui transforme une facture subie en décisions.
  */
 export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { summary, catalog, refresh } = useApp();
@@ -54,15 +54,15 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
         {summary.appliances.length === 0 ? (
           <EmptyState
             emoji="🔌"
-            title="Commencons par vos appareils"
+            title="Commençons par vos appareils"
             action={
               <button onClick={() => setPickerOpen(true)} className="btn-primary mt-2">
                 ➕ Ajouter mon premier appareil
               </button>
             }
           >
-            Touchez les objets que vous avez chez vous. Pas besoin de connaitre leur puissance :
-            l application s en occupe.
+            Touchez les objets que vous avez chez vous. Pas besoin de connaître leur puissance :
+            l’application s’en occupe.
           </EmptyState>
         ) : null}
 
@@ -71,9 +71,9 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
           <section>
             <div className="mb-2 flex items-end justify-between gap-2">
               <div>
-                <h2 className="text-lg font-black leading-tight">🔁 Ca tourne tout seul</h2>
+                <h2 className="text-lg font-black leading-tight">🔁 Ça tourne tout seul</h2>
                 <p className="text-sm font-bold text-ink-soft">
-                  Meme quand la maison est vide, 24h/24.
+                  Même quand la maison est vide, 24h/24.
                 </p>
               </div>
               <div className="text-right">
@@ -98,13 +98,13 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
           </section>
         ) : null}
 
-        {/* --- Les appareils qu on allume ----------------------------------- */}
+        {/* --- Les appareils qu’on allume ----------------------------------- */}
         {switchable.length > 0 ? (
           <section>
             <div className="mb-2 flex items-end justify-between gap-2">
               <div>
                 <h2 className="text-lg font-black leading-tight">🎚️ Vous les allumez</h2>
-                <p className="text-sm font-bold text-ink-soft">La ou vous pouvez agir.</p>
+                <p className="text-sm font-bold text-ink-soft">Là où vous pouvez agir.</p>
               </div>
               <div className="text-right">
                 <p className="text-xl font-black leading-none text-teal-600">
@@ -128,14 +128,14 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
 
         {summary.appliances.length > 0 ? (
           <p className="px-2 text-center text-xs font-bold leading-relaxed text-ink-muted">
-            Estimation calculee a partir de {summary.totals.applianceCount} appareil
+            Estimation calculée à partir de {summary.totals.applianceCount} appareil
             {summary.totals.applianceCount > 1 ? 's' : ''} et de la grille {summary.plan.label}.
-            Comparez-la a votre prochaine recharge pour l affiner.
+            Comparez-la à votre prochaine recharge pour l’affiner.
           </p>
         ) : null}
       </div>
 
-      {/* --- Bouton d ajout, toujours accessible au pouce ------------------- */}
+      {/* --- Bouton d’ajout, toujours accessible au pouce ------------------- */}
       <button
         onClick={() => setPickerOpen(true)}
         className="btn-primary fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-1/2 z-30 -translate-x-1/2 px-6 shadow-pop"

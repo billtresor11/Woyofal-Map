@@ -18,7 +18,7 @@ interface AppState {
   catalog: Catalog | null;
   loading: boolean;
   error: string | null;
-  /** Recharge le tableau de bord apres chaque modification. */
+  /** Recharge le tableau de bord après chaque modification. */
   refresh: () => Promise<void>;
   selectHousehold: (id: string) => void;
   reset: () => void;
@@ -59,7 +59,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSummary(data);
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
-        // Le foyer n existe plus (base reinitialisee) : on repart de l accueil.
+        // Le foyer n’existe plus (base reinitialisee) : on repart de l’accueil.
         localStorage.removeItem(STORAGE_KEY);
         setHouseholdId(null);
         setSummary(null);
@@ -80,7 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, id);
     } catch {
-      /* mode navigation privee : on continue en memoire */
+      /* mode navigation privée : on continue en memoire */
     }
     setHouseholdId(id);
   }, []);
@@ -105,6 +105,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 export function useApp(): AppState {
   const context = useContext(AppContext);
-  if (!context) throw new Error('useApp doit etre utilise dans <AppProvider>.');
+  if (!context) throw new Error('useApp doit être utilisé dans <AppProvider>.');
   return context;
 }

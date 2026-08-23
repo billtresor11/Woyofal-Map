@@ -42,7 +42,7 @@ const previewSchema = z.object({
 });
 
 export async function catalogRoutes(app: FastifyInstance) {
-  /** Le catalogue visuel : c est lui qui alimente la grille d illustrations. */
+  /** Le catalogue visuel : c’est lui qui alimente la grille d’illustrations. */
   app.get('/api/catalog', async (request) => {
     const query = (request.query as { q?: string }).q;
     const templates = query ? searchTemplates(query) : APPLIANCE_TEMPLATES;
@@ -52,7 +52,7 @@ export async function catalogRoutes(app: FastifyInstance) {
   app.get('/api/catalog/:templateId', async (request) => {
     const { templateId } = request.params as { templateId: string };
     const template = findTemplate(templateId);
-    if (!template) throw notFound(`L appareil "${templateId}"`);
+    if (!template) throw notFound(`L’appareil "${templateId}"`);
     const selection = defaultSelection(template);
     return {
       template,
@@ -62,14 +62,14 @@ export async function catalogRoutes(app: FastifyInstance) {
   });
 
   /**
-   * Previsualisation en direct pendant que l utilisateur clique sur les
-   * caracteristiques. On repond le COUT MARGINAL : "ce que cet appareil
-   * ajoutera a votre facture", et non son cout isole en tranche 1.
+   * Previsualisation en direct pendant que l’utilisateur clique sur les
+   * caractéristiques. On répond le COÛT MARGINAL : "ce que cet appareil
+   * ajoutera a votre facture", et non son coût isole en tranche 1.
    */
   app.post('/api/catalog/:templateId/preview', async (request) => {
     const { templateId } = request.params as { templateId: string };
     const template = findTemplate(templateId);
-    if (!template) throw notFound(`L appareil "${templateId}"`);
+    if (!template) throw notFound(`L’appareil "${templateId}"`);
     const body = parse(previewSchema, request.body ?? {});
 
     const consumption = computeConsumption(template, {
@@ -103,9 +103,9 @@ export async function catalogRoutes(app: FastifyInstance) {
   app.get('/api/tariffs', async () => ({ plans: await loadPlans() }));
 
   /**
-   * Les tarifs Senelec changent. L utilisateur (ou l administrateur) doit
-   * pouvoir corriger la grille depuis l application, sans redeploiement :
-   * il lui suffit de recopier les prix de son recu Woyofal.
+   * Les tarifs Senelec changent. L’utilisateur (ou l’administrateur) doit
+   * pouvoir corriger la grille depuis l’application, sans redéploiement :
+   * il lui suffit de recopier les prix de son reçu Woyofal.
    */
   app.patch('/api/tariffs/:code', async (request) => {
     const { code } = request.params as { code: string };
@@ -119,7 +119,7 @@ export async function catalogRoutes(app: FastifyInstance) {
         ...(body.vatRate !== undefined ? { vatRate: body.vatRate } : {}),
         ...(body.fixedFeePerMonth !== undefined ? { fixedFeePerMonth: body.fixedFeePerMonth } : {}),
         isCustom: true,
-        source: body.source ?? 'Grille personnalisee par l utilisateur',
+        source: body.source ?? 'Grille personnalisee par l’utilisateur',
       },
     });
 

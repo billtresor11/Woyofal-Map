@@ -2,13 +2,13 @@ import type { Summary } from '../api/types.js';
 import { fcfa, kwh as fmtKwh, tierColor } from '../lib/format.js';
 
 /**
- * En-tete de l application : la seule chose que l utilisateur regarde vraiment.
+ * En-tete de l’application : la seule chose que l’utilisateur regarde vraiment.
  * Un montant en FCFA, une jauge coloree, une phrase claire.
  * Les tranches Senelec sont ici, mais jamais nommees "algorithme" ni "tarif" :
  * elles se lisent comme un jeu de couleurs.
  */
 export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpenTariff?: () => void }) {
-  const { bill, gauge, totals, equivalents, budget, dailyAmount } = summary;
+  const { bill, gauge, totals, équivalents, budget, dailyAmount } = summary;
   const tiers = gauge.segments.map((segment) => segment.tier);
   const scale = gauge.scaleKwh;
   const fillRatio = Math.min(1, totals.kwhPerMonth / scale);
@@ -18,7 +18,7 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
     <div className="bg-gradient-to-b from-teal-600 to-teal-500 px-5 pb-6 pt-[calc(env(safe-area-inset-top)+1rem)] text-white">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-bold text-white/80">Facture estimee ce mois-ci</p>
+          <p className="text-sm font-bold text-white/80">Facture estimée ce mois-ci</p>
           <p className="mt-0.5 text-5xl font-black tabular-nums tracking-tight">
             {fcfa(bill.totalTTC)}
           </p>
@@ -29,17 +29,17 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
         <button
           onClick={onOpenTariff}
           className="tap flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-xl"
-          aria-label="Reglages du tarif"
+          aria-label="Réglages du tarif"
         >
           ⚙️
         </button>
       </div>
 
-      {equivalents.length > 0 ? (
+      {équivalents.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {equivalents.map((equivalent) => (
-            <span key={equivalent.label} className="chip bg-white/15 text-white">
-              {equivalent.emoji} {equivalent.count} {equivalent.label}
+          {équivalents.map((équivalent) => (
+            <span key={équivalent.label} className="chip bg-white/15 text-white">
+              {équivalent.emoji} {équivalent.count} {équivalent.label}
             </span>
           ))}
         </div>
@@ -48,9 +48,9 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
       {/* --- Jauge des tranches ------------------------------------------- */}
       <div className="mt-5">
         <div className="relative h-5 overflow-hidden rounded-full bg-white/20">
-          {/* Les tranches en fond, pales : la ou l on n est pas encore alle. */}
+          {/* Les tranches en fond, pâles : là où l’on n’est pas encore allé. */}
           <TierBand tiers={tiers} scale={scale} opacity={0.3} />
-          {/* La meme bande, en couleurs vives, coupee a la consommation reelle. */}
+          {/* La même bande, en couleurs vives, coupée à la consommation réelle. */}
           <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${fillRatio * 100}%` }}>
             <div className="relative h-full" style={{ width: `${fillRatio > 0 ? 100 / fillRatio : 100}%` }}>
               <TierBand tiers={tiers} scale={scale} opacity={1} />
@@ -83,14 +83,14 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
         <p className="mt-3 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-snug">
           {gauge.kwhToNextTier === null ? (
             <>
-              🔴 Vous etes dans la tranche la plus chere. Chaque kWh y coute{' '}
+              🔴 Vous êtes dans la tranche la plus chère. Chaque kWh y coûte{' '}
               {fcfa(current.pricePerKwh)}.
             </>
           ) : (
             <>
-              {current.order === 1 ? '🟢' : '🟠'} Vous etes en{' '}
+              {current.order === 1 ? '🟢' : '🟠'} Vous êtes en{' '}
               <strong>{current.label.toLowerCase()}</strong>. Encore{' '}
-              <strong>{fmtKwh(gauge.kwhToNextTier)}</strong> avant que le prix n augmente.
+              <strong>{fmtKwh(gauge.kwhToNextTier)}</strong> avant que le prix n’augmente.
             </>
           )}
         </p>
@@ -106,7 +106,7 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
             }`}
           >
             {budget.status === 'over'
-              ? `😬 Vous depassez votre budget de ${fcfa(-budget.remaining)}.`
+              ? `😬 Vous dépassez votre budget de ${fcfa(-budget.remaining)}.`
               : budget.status === 'warning'
                 ? `⚠️ Il vous reste ${fcfa(budget.remaining)} avant votre budget.`
                 : `👍 Dans votre budget : il reste ${fcfa(budget.remaining)}.`}

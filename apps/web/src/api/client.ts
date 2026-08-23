@@ -1,5 +1,5 @@
 /**
- * Client HTTP minimal. Une seule porte d entree vers l API : les erreurs
+ * Client HTTP minimal. Une seule porte d’entree vers l’API : les erreurs
  * remontent toujours avec un message en francais, affichable tel quel.
  */
 export class ApiError extends Error {
@@ -21,7 +21,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
     });
   } catch {
-    throw new ApiError("Pas de connexion. Verifiez votre reseau et reessayez.", 0);
+    throw new ApiError("Pas de connexion. Vérifiez votre réseau et reessayez.", 0);
   }
 
   if (response.status === 204) return undefined as T;

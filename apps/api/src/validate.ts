@@ -8,7 +8,7 @@ export function parse<S extends ZodTypeAny>(schema: S, data: unknown): z.infer<S
     const detail = result.error.issues
       .map((issue) => `${issue.path.join('.') || 'corps'} : ${issue.message}`)
       .join(' ; ');
-    throw new AppError(`Donnees invalides. ${detail}`, 422, 'VALIDATION_ERROR');
+    throw new AppError(`Données invalides. ${detail}`, 422, 'VALIDATION_ERROR');
   }
   return result.data;
 }
