@@ -48,7 +48,6 @@ interface DbMember {
   id: string;
   householdId: string;
   name: string;
-  emoji: string;
   color: string;
   presenceRatio: number;
 }
@@ -64,6 +63,8 @@ interface DbAppliance {
   ownerId: string | null;
   roomId: string | null;
   consumption: ConsumptionResult;
+  /** Personnes qui partagent l'appareil ; vide = tout le foyer. */
+  shares: Record<string, number>;
   createdAt: number;
 }
 interface DbSession {
@@ -94,7 +95,6 @@ interface Db {
 }
 
 const MEMBER_COLORS = ['#F97316', '#0EA5E9', '#22C55E', '#8B5CF6', '#EC4899', '#EAB308'];
-const AVATARS = ['👩🏾', '👨🏾', '👧🏾', '👦🏾', '👵🏾', '🧑🏾'];
 
 function newId(): string {
   return `id${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -152,12 +152,14 @@ function household(id: string): DbHousehold {
 }
 
 function toApplianceInput(row: DbAppliance): ApplianceInput {
+  const shares = row.shares && Object.keys(row.shares).length > 0 ? row.shares : undefined;
   return {
     id: row.id,
     label: row.label,
     templateId: row.templateId,
     ownership: row.ownership,
     ownerId: row.ownerId,
+    shares,
     consumption: row.consumption,
   };
 }
@@ -180,7 +182,7 @@ function serializeAppliance(row: DbAppliance) {
     isActive: true,
     alwaysOn: row.consumption.alwaysOn,
     consumption: row.consumption,
-    shares: [],
+    shares: Object.entries(row.shares ?? {}).map(([memberId, weight]) => ({ memberId, weight })),
   };
 }
 
@@ -312,6 +314,7 @@ function addAppliance(householdId: string, body: Record<string, unknown>) {
     ownerId: (body.ownerId as string) ?? null,
     roomId: (body.roomId as string) ?? null,
     consumption,
+    shares: (body.shares as Record<string, number>) ?? {},
     createdAt: Date.now(),
   };
   db().appliances.push(row);
@@ -331,6 +334,7 @@ function updateAppliance(id: string, body: Record<string, unknown>) {
   if (body.label !== undefined) row.label = body.label as string;
   if (body.ownership !== undefined) row.ownership = body.ownership as 'SHARED' | 'PRIVATE';
   if (body.ownerId !== undefined) row.ownerId = (body.ownerId as string) ?? null;
+  if (body.shares !== undefined) row.shares = (body.shares as Record<string, number>) ?? {};
   if (body.roomId !== undefined) row.roomId = (body.roomId as string) ?? null;
   row.consumption = computeConsumption(template, {
     templateId: template.id,
@@ -365,26 +369,27 @@ function seedIfEmpty(): string | null {
       id: newId(),
       householdId: home.id,
       name,
-      emoji: AVATARS[index % AVATARS.length]!,
       color: MEMBER_COLORS[index % MEMBER_COLORS.length]!,
       presenceRatio: 1,
     });
   });
   const awa = data.members[0]!;
 
-  const demo: Array<[string, Record<string, string>, string | undefined, 'SHARED' | 'PRIVATE', string | null]> = [
+  const demo: Array<
+    [string, Record<string, string>, string | undefined, 'SHARED' | 'PRIVATE', string | null, number?]
+  > = [
     ['refrigerateur', { taille: 'moyen' }, undefined, 'SHARED', null],
     ['televiseur', { taille: 'p43' }, 'soir', 'SHARED', null],
     ['decodeur', {}, undefined, 'SHARED', null],
     ['box_internet', {}, undefined, 'SHARED', null],
-    ['ampoules', { type: 'led', nombre: 'q8' }, 'soir', 'SHARED', null],
-    ['ventilateur', { type: 'pied', nombre: 'q2' }, 'nuit', 'SHARED', null],
+    ['ampoules', { type: 'led' }, 'soir', 'SHARED', null, 8],
+    ['ventilateur', { type: 'pied' }, 'nuit', 'SHARED', null, 2],
     ['fer_repasser', {}, 'hebdo', 'SHARED', null],
     ['machine_laver', { programme: 'froid', sechage: 'non' }, 'deux', 'SHARED', null],
     ['climatiseur', { puissance: 'cv1_5', techno: 'classique', reglage: 'moyen' }, 'nuit', 'PRIVATE', awa.id],
   ];
 
-  for (const [templateId, options, usageProfileId, ownership, ownerId] of demo) {
+  for (const [templateId, options, usageProfileId, ownership, ownerId, quantity] of demo) {
     const template = findTemplate(templateId);
     if (!template) continue;
     const base = defaultSelection(template);
@@ -392,6 +397,7 @@ function seedIfEmpty(): string | null {
       ...base,
       options: { ...base.options, ...options },
       usageProfileId: usageProfileId ?? base.usageProfileId,
+      quantity: quantity ?? base.quantity,
     };
     data.appliances.push({
       id: newId(),
@@ -405,6 +411,7 @@ function seedIfEmpty(): string | null {
       ownerId,
       roomId: null,
       consumption: computeConsumption(template, selection),
+      shares: {},
       createdAt: Date.now(),
     });
   }
@@ -502,13 +509,12 @@ export async function handleStandalone<T>(
       monthlyBudget: (payload.monthlyBudget as number) ?? null,
     };
     db().households.push(home);
-    const people = (payload.members as Array<{ name: string; emoji?: string }>) ?? [];
+    const people = (payload.members as Array<{ name: string }>) ?? [];
     people.forEach((person, index) => {
       db().members.push({
         id: newId(),
         householdId: home.id,
         name: person.name,
-        emoji: person.emoji ?? AVATARS[index % AVATARS.length]!,
         color: MEMBER_COLORS[index % MEMBER_COLORS.length]!,
         presenceRatio: 1,
       });
@@ -533,7 +539,6 @@ export async function handleStandalone<T>(
         id: newId(),
         householdId: id,
         name: String(payload.name),
-        emoji: String(payload.emoji ?? AVATARS[count % AVATARS.length]),
         color: MEMBER_COLORS[count % MEMBER_COLORS.length]!,
         presenceRatio: Number(payload.presenceRatio ?? 1),
       };

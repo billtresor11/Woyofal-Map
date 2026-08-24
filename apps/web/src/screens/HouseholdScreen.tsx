@@ -3,9 +3,7 @@ import { api } from '../api/client.js';
 import type { SplitResult } from '../api/types.js';
 import { EmptyState, Sheet, Spinner } from '../components/ui.js';
 import { useApp } from '../hooks/useApp.js';
-import { fcfa, kwh as fmtKwh, monthLabel } from '../lib/format.js';
-
-const AVATARS = ['👩🏾', '👨🏾', '👧🏾', '👦🏾', '👵🏾', '👴🏾', '🧑🏾', '👶🏾', '🧕🏾', '👨🏾‍🦱'];
+import { fcfa, initial, kwh as fmtKwh, monthLabel } from '../lib/format.js';
 
 /**
  * ONGLET 3 - Colocation / famille.
@@ -49,7 +47,7 @@ export function HouseholdScreen() {
       <div className="space-y-5 px-4 pt-5">
         {summary.members.length === 0 ? (
           <EmptyState
-            emoji="👨‍👩‍👧"
+            emoji="🏠"
             title="Ajoutez les personnes du foyer"
             action={
               <button onClick={() => setMemberSheet(true)} className="btn-primary mt-2">
@@ -85,10 +83,10 @@ export function HouseholdScreen() {
                 <div key={member.memberId} className="card overflow-hidden">
                   <div className="flex items-center gap-3 px-4 pb-3 pt-4">
                     <span
-                      className="flex h-12 w-12 items-center justify-center rounded-full text-2xl"
-                      style={{ backgroundColor: `${member.color}22` }}
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-black text-white"
+                      style={{ backgroundColor: member.color }}
                     >
-                      {member.emoji}
+                      {initial(member.name)}
                     </span>
                     <div className="flex-1">
                       <p className="text-lg font-black leading-tight">{member.name}</p>
@@ -125,7 +123,7 @@ export function HouseholdScreen() {
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-3 text-xs font-bold text-ink-soft">
                     <span>🏠 Commun : {fmtKwh(member.kwhShared)}</span>
-                    <span>🙋 Perso : {fmtKwh(member.kwhPrivate)}</span>
+                    <span>🔒 Perso : {fmtKwh(member.kwhPrivate)}</span>
                     {member.kwhPunctual > 0 ? <span>⏱️ Sessions : {fmtKwh(member.kwhPunctual)}</span> : null}
                   </div>
 
@@ -144,7 +142,7 @@ export function HouseholdScreen() {
             <div className="rounded-3xl bg-sand-100 px-4 py-4">
               <p className="mb-1 text-sm font-black">⚖️ Comment on partage</p>
               <ul className="space-y-1 text-sm font-bold leading-snug text-ink-soft">
-                <li>• Les appareils communs sont divisés à parts égales entre les occupants.</li>
+                <li>• Un appareil commun est divisé à parts égales entre les personnes qui l’utilisent.</li>
                 <li>• Chacun paie en plus ses propres appareils et ses propres sessions.</li>
                 <li>• Les kWh sont comptés au prix moyen du foyer, pas au prix de la dernière tranche.</li>
               </ul>
@@ -158,7 +156,16 @@ export function HouseholdScreen() {
                     const member = summary.members.find((item) => item.id === session.memberId);
                     return (
                       <div key={session.id} className="card flex items-center gap-3 px-4 py-3">
-                        <span className="text-xl">{member?.emoji ?? '🏠'}</span>
+                        {member ? (
+                          <span
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-black text-white"
+                            style={{ backgroundColor: member.color }}
+                          >
+                            {initial(member.name)}
+                          </span>
+                        ) : (
+                          <span className="text-xl">🏠</span>
+                        )}
                         <div className="flex-1">
                           <p className="text-sm font-extrabold">{session.label}</p>
                           <p className="text-xs font-bold text-ink-muted">
@@ -219,14 +226,13 @@ function AddMemberSheet({
   onSaved: () => void;
 }) {
   const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState(AVATARS[0]!);
   const [saving, setSaving] = useState(false);
 
   async function save() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await api.post(`/api/households/${householdId}/members`, { name: name.trim(), emoji });
+      await api.post(`/api/households/${householdId}/members`, { name: name.trim() });
       setName('');
       onSaved();
       onClose();
@@ -253,20 +259,7 @@ function AddMemberSheet({
         placeholder="Son prénom"
         className="mb-4 w-full rounded-2xl border-2 border-transparent bg-white px-4 py-3 text-base font-bold shadow-card outline-none focus:border-teal-500"
       />
-      <p className="mb-2 text-sm font-black">Choisir un avatar</p>
-      <div className="grid grid-cols-5 gap-2">
-        {AVATARS.map((item) => (
-          <button
-            key={item}
-            onClick={() => setEmoji(item)}
-            className={`tap flex h-14 items-center justify-center rounded-2xl border-2 text-2xl ${
-              emoji === item ? 'border-teal-500 bg-teal-500/10' : 'border-transparent bg-white'
-            }`}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
+
     </Sheet>
   );
 }

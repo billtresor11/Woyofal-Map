@@ -195,10 +195,16 @@ function ApplianceRow({
           ) : null}
         </span>
         <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold text-ink-muted">
-          <span>{fmtKwh(appliance.consumption.kwhPerMonth)} / mois</span>
+          <span>
+            {fmtKwh(appliance.consumption.kwhPerDay)}/jour · {fmtKwh(appliance.consumption.kwhPerMonth)}/mois
+          </span>
           {owner ? (
             <span className="chip bg-sand-100 px-2 py-0 text-[11px]">
-              {owner.emoji} {owner.name}
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: owner.color }}
+              />
+              {owner.name}
             </span>
           ) : null}
         </span>

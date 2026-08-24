@@ -23,7 +23,6 @@ export type {
 export interface Member {
   id: string;
   name: string;
-  emoji: string;
   color: string;
   presenceRatio: number;
 }
@@ -51,6 +50,8 @@ export interface Appliance {
   isActive: boolean;
   alwaysOn: boolean;
   consumption: ConsumptionResult;
+  /** Personnes qui partagent l'appareil ; vide = tout le foyer. */
+  shares: Array<{ memberId: string; weight: number }>;
 }
 
 export interface ApplianceCost {

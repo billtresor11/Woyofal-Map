@@ -45,7 +45,6 @@ model Member {
   id            String   @id @default(cuid())
   householdId   String
   name          String
-  emoji         String   @default("🙂")
   color         String   @default("#0EA5E9")
   /// Part de présence sur le mois (0 a 1). 0,5 = absent la moitié du mois.
   presenceRatio Float    @default(1)

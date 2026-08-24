@@ -198,7 +198,11 @@ function ActionEstimator() {
                       : 'border-transparent bg-sand-100'
                   }`}
                 >
-                  {member.emoji} {member.name} {savedFor === member.id ? '✓' : ''}
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: member.color }}
+                  />
+                  {member.name} {savedFor === member.id ? '✓' : ''}
                 </button>
               ))}
               <button

@@ -90,9 +90,9 @@ async function seedDemoHousehold() {
       monthlyBudget: 35_000,
       members: {
         create: [
-          { name: 'Awa', emoji: '👩🏾', color: '#F97316' },
-          { name: 'Babacar', emoji: '👨🏾', color: '#0EA5E9' },
-          { name: 'Coumba', emoji: '👧🏾', color: '#22C55E' },
+          { name: 'Awa', color: '#F97316' },
+          { name: 'Babacar', color: '#0EA5E9' },
+          { name: 'Coumba', color: '#22C55E' },
         ],
       },
       rooms: {
@@ -117,13 +117,14 @@ async function seedDemoHousehold() {
     ownership: 'SHARED' | 'PRIVATE';
     ownerId?: string | null;
     roomId?: string | null;
+    quantity?: number;
   }> = [
     { templateId: 'refrigerateur', options: { taille: 'moyen', etat: 'moyen' }, ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'televiseur', options: { taille: 'p43' }, usageProfileId: 'soir', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'decodeur', ownership: 'SHARED', roomId: salon?.id },
     { templateId: 'box_internet', ownership: 'SHARED', roomId: salon?.id },
-    { templateId: 'ampoules', options: { type: 'led', nombre: 'q8' }, usageProfileId: 'soir', ownership: 'SHARED' },
-    { templateId: 'ventilateur', options: { type: 'pied', nombre: 'q2' }, usageProfileId: 'nuit', ownership: 'SHARED' },
+    { templateId: 'ampoules', options: { type: 'led' }, usageProfileId: 'soir', ownership: 'SHARED', quantity: 8 },
+    { templateId: 'ventilateur', options: { type: 'pied' }, usageProfileId: 'nuit', ownership: 'SHARED', quantity: 2 },
     { templateId: 'fer_repasser', usageProfileId: 'hebdo', ownership: 'SHARED' },
     { templateId: 'machine_laver', options: { programme: 'froid', sechage: 'non' }, usageProfileId: 'deux', ownership: 'SHARED' },
     {
@@ -144,6 +145,7 @@ async function seedDemoHousehold() {
       ...base,
       options: { ...base.options, ...(item.options ?? {}) },
       usageProfileId: item.usageProfileId ?? base.usageProfileId,
+      quantity: item.quantity ?? base.quantity,
     };
     const consumption = computeConsumption(template, selection);
 

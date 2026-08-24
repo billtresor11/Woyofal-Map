@@ -30,7 +30,7 @@ const createHouseholdSchema = z.object({
   subscribedKva: z.number().int().min(1).max(60).default(5),
   monthlyBudget: z.number().int().min(0).max(10_000_000).nullish(),
   members: z
-    .array(z.object({ name: z.string().min(1).max(40), emoji: z.string().max(8).optional() }))
+    .array(z.object({ name: z.string().min(1).max(40) }))
     .max(12)
     .optional(),
 });
@@ -39,7 +39,6 @@ const updateHouseholdSchema = createHouseholdSchema.partial().omit({ members: tr
 
 const memberSchema = z.object({
   name: z.string().min(1).max(40),
-  emoji: z.string().max(8).default('🙂'),
   color: z.string().max(20).optional(),
   presenceRatio: z.number().min(0).max(1).default(1),
 });
@@ -63,7 +62,6 @@ export async function householdRoutes(app: FastifyInstance) {
         members: {
           create: (body.members ?? []).map((member, index) => ({
             name: member.name,
-            emoji: member.emoji ?? '🙂',
             color: MEMBER_COLORS[index % MEMBER_COLORS.length]!,
           })),
         },
@@ -112,7 +110,6 @@ export async function householdRoutes(app: FastifyInstance) {
       data: {
         householdId: id,
         name: body.name,
-        emoji: body.emoji,
         color: body.color ?? MEMBER_COLORS[household.members.length % MEMBER_COLORS.length]!,
         presenceRatio: body.presenceRatio,
       },

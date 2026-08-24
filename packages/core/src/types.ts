@@ -216,7 +216,6 @@ export type Ownership = 'SHARED' | 'PRIVATE';
 export interface MemberInput {
   id: string;
   name: string;
-  emoji: string;
   color: string;
 
 }
@@ -243,7 +242,6 @@ export interface PunctualUsageInput {
 export interface MemberSplit {
   memberId: string;
   name: string;
-  emoji: string;
   color: string;
   kwhShared: number;
   kwhPrivate: number;

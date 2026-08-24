@@ -25,9 +25,9 @@ function appliance(
 }
 
 const members: MemberInput[] = [
-  { id: 'a', name: 'Awa', emoji: '👩', color: '#F97316' },
-  { id: 'b', name: 'Babacar', emoji: '👨', color: '#0EA5E9' },
-  { id: 'c', name: 'Coumba', emoji: '👧', color: '#22C55E' },
+  { id: 'a', name: 'Awa', color: '#F97316' },
+  { id: 'b', name: 'Babacar', color: '#0EA5E9' },
+  { id: 'c', name: 'Coumba', color: '#22C55E' },
 ];
 
 describe('répartition de la facture', () => {
@@ -73,6 +73,19 @@ describe('répartition de la facture', () => {
 
     expect(awa.kwhTotal).toBeCloseTo(commun, 1);
     expect(babacar.kwhTotal).toBeCloseTo(commun + pc.consumption.kwhPerMonth, 1);
+  });
+
+  it('divise un appareil commun entre les seules personnes qui le partagent', () => {
+    const clim = appliance('1', 'climatiseur', 'SHARED');
+    // La climatisation de la chambre partagée par Awa et Babacar uniquement.
+    clim.shares = { a: 1, b: 1 };
+
+    const result = splitHousehold({ month: '2026-08', members, appliances: [clim], plan });
+    const moitie = clim.consumption.kwhPerMonth / 2;
+
+    expect(result.members.find((m) => m.memberId === 'a')!.kwhShared).toBeCloseTo(moitie, 1);
+    expect(result.members.find((m) => m.memberId === 'b')!.kwhShared).toBeCloseTo(moitie, 1);
+    expect(result.members.find((m) => m.memberId === 'c')!.kwhShared).toBe(0);
   });
 
   it('affecte une session ponctuelle a son auteur', () => {

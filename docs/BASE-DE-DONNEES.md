@@ -38,10 +38,11 @@ déclenche l'alerte « vous allez dépasser ».
 
 ### `Member` — les personnes
 
-Nom, avatar et couleur. Les appareils communs sont divisés à parts égales entre les
-occupants ; chacun paie en plus ses propres appareils. La colonne `presenceRatio` est
-conservée pour un raffinement futur (pondérer selon le temps de présence) mais
-n'intervient pas dans la règle actuelle.
+Nom et couleur — aucun avatar : le prénom suffit, et l'interface l'affiche sur une
+pastille colorée portant son initiale. Un appareil commun est divisé à parts égales
+entre les personnes qui l'utilisent ; chacun paie en plus ses propres appareils. La
+colonne `presenceRatio` est conservée pour un raffinement futur (pondérer selon le
+temps de présence) mais n'intervient pas dans la règle actuelle.
 
 ### `Room` — les pièces
 
@@ -74,9 +75,10 @@ le client envoie des choix, jamais des kilowattheures.
 
 ### `ApplianceShare` — le partage fin
 
-Table de liaison optionnelle. Par défaut, un appareil commun est réparti selon la
-présence de chacun. Cette table permet de dire : « la clim du salon, ce sont surtout
-Awa et Babacar qui l'utilisent, poids 2 contre 1 ».
+Table de liaison optionnelle. Par défaut, un appareil commun est partagé par tout le
+foyer. Cette table restreint la liste : « le ventilateur de la chambre, ce sont Awa et
+Babacar qui l'utilisent » — le coût est alors divisé entre ces deux personnes.
+C'est ce que règlent les cases à cocher de l'écran « Qui l'utilise ? ».
 
 ### `PunctualSession` — les sessions ponctuelles
 

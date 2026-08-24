@@ -127,6 +127,22 @@ boucle de fiabilité du produit.
 
 ---
 
+## 5 bis. La répartition en colocation
+
+```
+Part d'un occupant = Σ (coût de chaque appareil commun / nombre de personnes qui le partagent)
+                   + coût de ses appareils personnels
+                   + coût de ses sessions ponctuelles
+```
+
+Par défaut, un appareil commun est partagé par tout le foyer. L'écran « Qui l'utilise ? »
+permet de restreindre la liste : le ventilateur d'une chambre partagée par deux personnes
+n'est facturé qu'à ces deux-là.
+
+Les kWh de chacun sont valorisés au **prix moyen du foyer**, jamais au prix marginal :
+sinon le dernier à consommer porterait à lui seul toute la tranche 3. La somme des parts
+est ainsi toujours égale à la facture, au franc près.
+
 ## 6. ⚠️ Sur la fiabilité des prix
 
 Les valeurs livrées sont celles fournies par le client, mais **les grilles changent** et

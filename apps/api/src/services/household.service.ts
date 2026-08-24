@@ -276,7 +276,6 @@ export async function buildSplit(householdId: string, month = currentMonth()) {
   const members: MemberInput[] = household.members.map((member) => ({
     id: member.id,
     name: member.name,
-    emoji: member.emoji,
     color: member.color,
   }));
 

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { api } from '../api/client.js';
 import { useApp } from '../hooks/useApp.js';
+import { initial } from '../lib/format.js';
 
-const AVATARS = ['👩🏾', '👨🏾', '👧🏾', '👦🏾', '👵🏾', '🧑🏾'];
+/** Couleurs attribuées automatiquement, dans l'ordre d'ajout. */
+const COLORS = ['#F97316', '#0EA5E9', '#22C55E', '#8B5CF6', '#EC4899', '#EAB308'];
 
 /**
  * Premier écran. Trois questions, pas une de plus : le nom du foyer, le type de
@@ -29,7 +31,7 @@ export function Onboarding() {
         monthlyBudget: budget ? Number(budget.replace(/\D/g, '')) : null,
         members: people
           .filter((person) => person.trim())
-          .map((person, index) => ({ name: person.trim(), emoji: AVATARS[index % AVATARS.length]! })),
+          .map((person) => ({ name: person.trim() })),
       });
       selectHousehold(household.id);
     } catch (err) {
@@ -89,12 +91,15 @@ export function Onboarding() {
           </div>
 
           <div>
-            <p className="mb-2 text-base font-black">👨‍👩‍👧 Qui habite ici ?</p>
+            <p className="mb-2 text-base font-black">🏷️ Qui habite ici ?</p>
             <div className="space-y-2">
               {people.map((person, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sand-100 text-xl">
-                    {AVATARS[index % AVATARS.length]}
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-black text-white"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  >
+                    {person.trim() ? initial(person) : '?'}
                   </span>
                   <input
                     value={person}

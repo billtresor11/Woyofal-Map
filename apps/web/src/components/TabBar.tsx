@@ -3,7 +3,7 @@ export type TabId = 'inventaire' | 'estimateur' | 'foyer';
 const TABS: Array<{ id: TabId; label: string; emoji: string }> = [
   { id: 'inventaire', label: 'Mes appareils', emoji: '🏠' },
   { id: 'estimateur', label: 'Combien ?', emoji: '⏱️' },
-  { id: 'foyer', label: 'Chez nous', emoji: '👨‍👩‍👧' },
+  { id: 'foyer', label: 'Chez nous', emoji: '⚖️' },
 ];
 
 export function TabBar({ active, onChange }: { active: TabId; onChange: (tab: TabId) => void }) {

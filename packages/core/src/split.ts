@@ -14,9 +14,14 @@ import type {
  * ---------------------------------------------------------------------------
  * La règle, volontairement simple à expliquer autour d'une table :
  *
- *     Part d'un occupant  =  (coût mensuel des appareils COMMUNS / nombre d'occupants)
+ *     Part d'un occupant  =  (coût de chaque appareil COMMUN / nombre de personnes
+ *                              qui le partagent)
  *                          +  coût mensuel de SES appareils personnels
  *                          +  coût de SES sessions ponctuelles du mois
+ *
+ * Par défaut un appareil commun est partagé par tout le foyer. On peut restreindre
+ * la liste (la climatisation d'une chambre partagée par deux personnes seulement) :
+ * le coût est alors divisé entre ces personnes-là.
  *
  * Deux précisions qui évitent les disputes :
  *
@@ -56,38 +61,56 @@ export function splitHousehold(input: SplitInput): HouseholdSplit {
     byMember.set(member.id, { shared: 0, private: 0, punctual: 0 });
   }
 
-  let commonKwh = 0;
   let unassignedKwh = 0;
 
-  // 1. Séparer les appareils communs des appareils personnels.
+  /**
+   * Qui partage cet appareil ? Les personnes explicitement désignées, ou bien
+   * tout le foyer si aucune restriction n'a été posée.
+   */
+  function sharersOf(appliance: ApplianceInput): MemberInput[] {
+    const shares = appliance.shares;
+    if (!shares) return members;
+    const chosen = members.filter((member) => (shares[member.id] ?? 0) > 0);
+    return chosen.length > 0 ? chosen : members;
+  }
+
+  // 1. Chaque appareil est réparti entre ceux qui le concernent.
   for (const appliance of appliances) {
     const kwh = appliance.consumption.kwhPerMonth;
     const owner = appliance.ownerId ? byMember.get(appliance.ownerId) : undefined;
 
     if (appliance.ownership === 'PRIVATE' && owner) {
       owner.private += kwh;
-    } else {
-      // Commun, ou personnel sans propriétaire identifié : c'est du commun.
-      commonKwh += kwh;
+      continue;
+    }
+
+    // Commun, ou personnel sans propriétaire identifié : c'est du commun.
+    const sharers = sharersOf(appliance);
+    if (sharers.length === 0) {
+      unassignedKwh += kwh;
+      continue;
+    }
+    const each = kwh / sharers.length;
+    for (const member of sharers) {
+      const bucket = byMember.get(member.id);
+      if (bucket) bucket.shared += each;
     }
   }
 
   // 2. Les sessions ponctuelles suivent la même logique.
   for (const usage of punctualUsages) {
     const bucket = usage.memberId ? byMember.get(usage.memberId) : undefined;
-    if (bucket) bucket.punctual += usage.kwh;
-    else commonKwh += usage.kwh;
-  }
-
-  // 3. Le commun se divise à parts égales entre les occupants.
-  if (occupants > 0) {
-    const sharePerMember = commonKwh / occupants;
-    for (const member of members) {
-      const bucket = byMember.get(member.id);
-      if (bucket) bucket.shared = sharePerMember;
+    if (bucket) {
+      bucket.punctual += usage.kwh;
+    } else if (occupants > 0) {
+      const each = usage.kwh / occupants;
+      for (const member of members) {
+        const shared = byMember.get(member.id);
+        if (shared) shared.shared += each;
+      }
+    } else {
+      unassignedKwh += usage.kwh;
     }
-  } else {
-    unassignedKwh = commonKwh;
   }
 
   const inventoryKwh =
@@ -114,7 +137,6 @@ export function splitHousehold(input: SplitInput): HouseholdSplit {
     return {
       memberId: member.id,
       name: member.name,
-      emoji: member.emoji,
       color: member.color,
       kwhShared: round(kwhShared),
       kwhPrivate: round(kwhPrivate),

@@ -58,6 +58,8 @@ export function ApplianceConfigSheet({
   const [quantity, setQuantity] = useState(1);
   const [ownership, setOwnership] = useState<'SHARED' | 'PRIVATE'>('SHARED');
   const [ownerId, setOwnerId] = useState<string | null>(null);
+  /** Personnes qui partagent l'appareil commun ; toutes par défaut. */
+  const [sharedWith, setSharedWith] = useState<string[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const [saving, setSaving] = useState(false);
@@ -80,10 +82,12 @@ export function ApplianceConfigSheet({
 
     setOwnership(existing?.ownership ?? 'SHARED');
     setOwnerId(existing?.ownerId ?? null);
+    const stored = existing?.shares?.map((share) => share.memberId) ?? [];
+    setSharedWith(stored.length > 0 ? stored : members.map((member) => member.id));
     setRoomId(existing?.roomId ?? null);
     setPreview(null);
     setError(null);
-  }, [open, template, existing, suggestedLabel]);
+  }, [open, template, existing, suggestedLabel, members]);
 
   // Aperçu en direct : la valeur affichée est le COÛT AJOUTÉ à la facture.
   useEffect(() => {
@@ -126,6 +130,11 @@ export function ApplianceConfigSheet({
       ...(usageProfileId === null ? { hoursPerDay: customHours, daysPerWeek: customDays } : {}),
       ownership,
       ownerId: ownership === 'PRIVATE' ? ownerId : null,
+      // Liste transmise seulement si tout le foyer n'est pas concerné.
+      shares:
+        ownership === 'SHARED' && sharedWith.length > 0 && sharedWith.length < members.length
+          ? Object.fromEntries(sharedWith.map((id) => [id, 1]))
+          : {},
       roomId,
     };
     try {
@@ -201,7 +210,7 @@ export function ApplianceConfigSheet({
           </p>
           <p className="text-sm font-bold text-ink-soft">
             {preview
-              ? `${fmtKwh(preview.consumption.kwhPerMonth)} par mois · environ ${fcfa(preview.dailyAmount)} par jour`
+              ? `${fmtKwh(preview.consumption.kwhPerMonth)} par mois · ${fmtKwh(preview.consumption.kwhPerDay)} et environ ${fcfa(preview.dailyAmount)} par jour`
               : 'Calcul en cours...'}
           </p>
         </div>
@@ -396,13 +405,13 @@ export function ApplianceConfigSheet({
         {/* --- Qui paie ? ---------------------------------------------------- */}
         {members.length > 0 ? (
           <div>
-            <p className="mb-2 text-base font-black">👥 Qui l’utilise ?</p>
+            <p className="mb-2 text-base font-black">🏷️ Qui l’utilise ?</p>
             <Segmented
               value={ownership}
               onChange={(value) => setOwnership(value)}
               options={[
-                { value: 'SHARED', label: 'Tout le monde', emoji: '🏠' },
-                { value: 'PRIVATE', label: 'Une personne', emoji: '🙋' },
+                { value: 'SHARED', label: 'Tout le monde' },
+                { value: 'PRIVATE', label: 'Une personne' },
               ]}
             />
             {ownership === 'PRIVATE' ? (
@@ -415,11 +424,56 @@ export function ApplianceConfigSheet({
                       ownerId === member.id ? 'border-teal-500 bg-teal-500/10' : 'border-transparent bg-white'
                     }`}
                   >
-                    <span>{member.emoji}</span> {member.name}
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: member.color }}
+                    />
+                    {member.name}
                   </button>
                 ))}
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-3">
+                <p className="mb-2 text-xs font-bold text-ink-muted">
+                  Décochez ceux qui ne s’en servent pas : le coût sera divisé entre les
+                  personnes cochées.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {members.map((member) => {
+                    const selected = sharedWith.includes(member.id);
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() =>
+                          setSharedWith((prev) =>
+                            prev.includes(member.id)
+                              ? prev.filter((id) => id !== member.id)
+                              : [...prev, member.id],
+                          )
+                        }
+                        className={`tap chip border-2 ${
+                          selected
+                            ? 'border-teal-500 bg-teal-500/10'
+                            : 'border-transparent bg-white opacity-50'
+                        }`}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: member.color }}
+                        />
+                        {member.name}
+                        <span className="text-teal-600">{selected ? '✓' : ''}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {sharedWith.length === 0 ? (
+                  <p className="mt-2 text-xs font-bold text-tier3">
+                    Personne n’est sélectionné : le coût sera partagé par tout le foyer.
+                  </p>
+                ) : null}
+              </div>
+            )}
           </div>
         ) : null}
 

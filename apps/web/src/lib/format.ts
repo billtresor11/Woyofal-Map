@@ -42,3 +42,8 @@ export function monthLabel(month: string): string {
   const index = Number(monthPart) - 1;
   return `${names[index] ?? ''} ${year}`;
 }
+
+/** Initiale d'un prénom, pour les pastilles de couleur. */
+export function initial(name: string): string {
+  return (name.trim()[0] ?? '?').toUpperCase();
+}
