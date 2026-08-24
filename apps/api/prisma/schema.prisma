@@ -19,9 +19,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Un compte utilisateur, créé au premier passage par Google.
+/// Aucun mot de passe n’est stocké : l’identité est vérifiée par Google.
+model User {
+  id         String   @id @default(cuid())
+  /// Identifiant Google stable (le « sub » du jeton). Jamais l’e-mail seul :
+  /// une adresse peut changer de propriétaire, pas ce numéro.
+  googleId   String   @unique
+  email      String   @unique
+  name       String
+  picture    String?
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  households Household[]
+}
+
 /// Le foyer : l’unite de facturation, rattachée a un compteur.
 model Household {
   id            String   @id @default(cuid())
+  /// Propriétaire du foyer. Seul lui peut le lire et le modifier.
+  userId        String?
   name          String
   /// Code de la grille tarifaire appliquée (voir TariffPlan).
   tariffCode    String   @default("WOYOFAL_DPP")
@@ -33,11 +51,14 @@ model Household {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   members    Member[]
   rooms      Room[]
   appliances Appliance[]
   sessions   PunctualSession[]
   topUps     TopUp[]
+
+  @@index([userId])
 }
 
 /// Un membre du foyer (colocataire, parent, enfant).

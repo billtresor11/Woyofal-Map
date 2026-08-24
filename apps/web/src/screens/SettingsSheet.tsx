@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import type { TariffPlan } from '../api/types.js';
 import { Sheet } from '../components/ui.js';
 import { useApp } from '../hooks/useApp.js';
+import { useAuth } from '../hooks/useAuth.js';
 
 /**
  * Réglages. Le point important : les prix Senelec sont MODIFIABLES.
@@ -11,6 +12,7 @@ import { useApp } from '../hooks/useApp.js';
  */
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { summary, refresh, reset } = useApp();
+  const { user, signOut } = useAuth();
   const [plans, setPlans] = useState<TariffPlan[]>([]);
   const [prices, setPrices] = useState<Record<number, string>>({});
   const [budget, setBudget] = useState('');
@@ -137,21 +139,52 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
           />
         </section>
 
-        <section>
-          <p className="mb-2 text-base font-black">🧹 Repartir de zéro</p>
-          <button
-            onClick={() => {
-              reset();
-              onClose();
-            }}
-            className="btn-ghost w-full text-tier3"
-          >
-            Quitter ce foyer sur cet appareil
-          </button>
-          <p className="mt-2 text-xs font-bold text-ink-muted">
-            Les données du foyer restent sur le serveur : vous pourrez y revenir.
-          </p>
-        </section>
+        {user ? (
+          <section>
+            <p className="mb-2 text-base font-black">👤 Mon compte</p>
+            <div className="card flex items-center gap-3 px-4 py-3">
+              {user.picture ? (
+                <img
+                  src={user.picture}
+                  alt=""
+                  className="h-11 w-11 shrink-0 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-teal-500 text-lg font-black text-white">
+                  {user.name.trim()[0]?.toUpperCase() ?? '?'}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-extrabold">{user.name}</p>
+                <p className="truncate text-xs font-bold text-ink-muted">{user.email}</p>
+              </div>
+            </div>
+            <button onClick={signOut} className="btn-ghost mt-2 w-full">
+              Se déconnecter
+            </button>
+            <p className="mt-2 text-xs font-bold text-ink-muted">
+              Votre foyer reste enregistré : il vous attendra à la prochaine connexion.
+            </p>
+          </section>
+        ) : (
+          <section>
+            <p className="mb-2 text-base font-black">🧹 Repartir de zéro</p>
+            <button
+              onClick={() => {
+                reset();
+                onClose();
+              }}
+              className="btn-ghost w-full text-tier3"
+            >
+              Quitter ce foyer sur cet appareil
+            </button>
+            <p className="mt-2 text-xs font-bold text-ink-muted">
+              Les données du foyer restent sur le serveur : vous pourrez y revenir.
+            </p>
+          </section>
+        )}
+
       </div>
     </Sheet>
   );

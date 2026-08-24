@@ -39,6 +39,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     response = await fetch(`${BASE}${path}`, {
       ...init,
+      // Le cookie de session voyage avec la requête, y compris vers une autre origine.
+      credentials: 'include',
       headers: { 'content-type': 'application/json', ...(init?.headers ?? {}) },
     });
   } catch {

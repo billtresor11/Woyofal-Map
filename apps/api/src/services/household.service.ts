@@ -12,6 +12,8 @@ import {
   type ConsumptionResult,
   type MemberInput,
 } from '@woyofal/core';
+import { authEnabled } from '../auth/google.js';
+import type { SessionUser } from '../auth/session.js';
 import { prisma } from '../db.js';
 import { AppError, notFound } from '../errors.js';
 import { loadPlan } from './tariff.service.js';
@@ -139,7 +141,14 @@ export function serializeAppliance(row: ApplianceRow) {
 
 // --- Chargement d’un foyer ---------------------------------------------------
 
-export async function getHouseholdOrThrow(householdId: string) {
+/**
+ * Charge un foyer en vérifiant qu'il appartient bien à la personne connectée.
+ *
+ * Un foyer qui ne lui appartient pas est traité comme inexistant : répondre
+ * « interdit » révélerait qu'il existe, et permettrait de deviner les autres
+ * comptes en essayant des identifiants au hasard.
+ */
+export async function getHouseholdOrThrow(householdId: string, user?: SessionUser | null) {
   const household = await prisma.household.findUnique({
     where: { id: householdId },
     include: {
@@ -153,7 +162,20 @@ export async function getHouseholdOrThrow(householdId: string) {
     },
   });
   if (!household) throw notFound('Ce foyer');
+  assertOwner(household, user);
   return household;
+}
+
+/** Règle d'accès, appliquée partout où l'on touche à un foyer. */
+export function assertOwner(
+  household: { userId: string | null },
+  user?: SessionUser | null,
+): void {
+  // Sans connexion Google configurée, l'application reste ouverte : c'est le
+  // mode développement et démonstration.
+  if (!authEnabled()) return;
+  if (!user) throw new AppError('Connectez-vous pour accéder à votre foyer.', 401, 'UNAUTHENTICATED');
+  if (household.userId !== user.id) throw notFound('Ce foyer');
 }
 
 /**
@@ -181,8 +203,12 @@ export async function consumedSoFar(
 
 // --- Le tableau de bord ------------------------------------------------------
 
-export async function buildSummary(householdId: string, month = currentMonth()) {
-  const household = await getHouseholdOrThrow(householdId);
+export async function buildSummary(
+  householdId: string,
+  month = currentMonth(),
+  user?: SessionUser | null,
+) {
+  const household = await getHouseholdOrThrow(householdId, user);
   const plan = await loadPlan(household.tariffCode);
 
   const applianceInputs = household.appliances.map(rowToApplianceInput);
@@ -257,8 +283,12 @@ export async function buildSummary(householdId: string, month = currentMonth()) 
 
 // --- Répartition colocation --------------------------------------------------
 
-export async function buildSplit(householdId: string, month = currentMonth()) {
-  const household = await getHouseholdOrThrow(householdId);
+export async function buildSplit(
+  householdId: string,
+  month = currentMonth(),
+  user?: SessionUser | null,
+) {
+  const household = await getHouseholdOrThrow(householdId, user);
   const plan = await loadPlan(household.tariffCode);
   const { start, end } = monthRange(month);
 

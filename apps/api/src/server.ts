@@ -1,9 +1,15 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
+import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
+import jwt from '@fastify/jwt';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyError } from 'fastify';
+import type { GoogleVerifier } from './auth/google.js';
+import { verifyGoogleCredential } from './auth/google.js';
+import { sessionSecret } from './auth/session.js';
+import { authRoutes } from './routes/auth.routes.js';
 import { prisma } from './db.js';
 import { AppError } from './errors.js';
 import { applianceRoutes } from './routes/appliance.routes.js';
@@ -13,7 +19,11 @@ import { householdRoutes } from './routes/household.routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export async function buildServer() {
+/**
+ * `verifyGoogleCredential` est injectable : les tests d'intégration fournissent
+ * une identité factice sans dépendre du réseau ni d'un vrai compte Google.
+ */
+export async function buildServer(options: { verifyGoogle?: GoogleVerifier } = {}) {
   const app = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? 'info',
@@ -26,7 +36,11 @@ export async function buildServer() {
 
   await app.register(cors, {
     origin: process.env.WEB_ORIGIN?.split(',') ?? true,
+    // Indispensable pour que le cookie de session voyage avec les requêtes.
+    credentials: true,
   });
+  await app.register(cookie);
+  await app.register(jwt, { secret: sessionSecret() });
 
   app.setErrorHandler((error: FastifyError, _request, reply) => {
     if (error instanceof AppError) {
@@ -45,6 +59,7 @@ export async function buildServer() {
 
   app.get('/api/health', async () => ({ status: 'ok', service: 'woyofal-map', time: new Date().toISOString() }));
 
+  await app.register(authRoutes(options.verifyGoogle ?? verifyGoogleCredential));
   await app.register(catalogRoutes);
   await app.register(householdRoutes);
   await app.register(applianceRoutes);

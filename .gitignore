@@ -14,3 +14,4 @@ coverage/
 demo/woyofal-map-fragment.html
 apps/web/dist-demo/
 apps/web/dist-dbg/
+apps/api/prisma/test.db*

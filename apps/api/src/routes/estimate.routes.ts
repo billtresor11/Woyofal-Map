@@ -8,9 +8,15 @@ import {
 } from '@woyofal/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { requireUser } from '../auth/session.js';
 import { prisma } from '../db.js';
 import { notFound } from '../errors.js';
-import { buildSummary, getHouseholdOrThrow } from '../services/household.service.js';
+import {
+  assertOwner,
+  buildSummary,
+  currentMonth,
+  getHouseholdOrThrow,
+} from '../services/household.service.js';
 import { loadPlan } from '../services/tariff.service.js';
 import { parse } from '../validate.js';
 
@@ -54,7 +60,7 @@ export async function estimateRoutes(app: FastifyInstance) {
     let previousKwh = 0;
     let tariffCode = body.tariffCode ?? DEFAULT_TARIFF_CODE;
     if (body.householdId) {
-      const summary = await buildSummary(body.householdId);
+      const summary = await buildSummary(body.householdId, currentMonth(), await requireUser(request));
       previousKwh = summary.consumedSoFar.kwh;
       tariffCode = summary.household.tariffCode;
     }
@@ -65,7 +71,7 @@ export async function estimateRoutes(app: FastifyInstance) {
 
     let sessionId: string | null = null;
     if (body.save && body.householdId) {
-      await getHouseholdOrThrow(body.householdId);
+      await getHouseholdOrThrow(body.householdId, await requireUser(request));
       const session = await prisma.punctualSession.create({
         data: {
           householdId: body.householdId,
@@ -96,7 +102,7 @@ export async function estimateRoutes(app: FastifyInstance) {
     let previousKwh = 0;
     let tariffCode = body.tariffCode ?? DEFAULT_TARIFF_CODE;
     if (body.householdId) {
-      const summary = await buildSummary(body.householdId);
+      const summary = await buildSummary(body.householdId, currentMonth(), await requireUser(request));
       previousKwh = summary.consumedSoFar.kwh;
       tariffCode = summary.household.tariffCode;
     }
@@ -107,8 +113,12 @@ export async function estimateRoutes(app: FastifyInstance) {
 
   app.delete('/api/sessions/:sessionId', async (request, reply) => {
     const { sessionId } = request.params as { sessionId: string };
-    const existing = await prisma.punctualSession.findUnique({ where: { id: sessionId } });
+    const existing = await prisma.punctualSession.findUnique({
+      where: { id: sessionId },
+      include: { household: true },
+    });
     if (!existing) throw notFound('Cette session');
+    assertOwner(existing.household, await requireUser(request));
     await prisma.punctualSession.delete({ where: { id: sessionId } });
     reply.code(204);
     return null;

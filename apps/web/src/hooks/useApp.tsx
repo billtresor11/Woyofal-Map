@@ -7,8 +7,10 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { authApi } from '../api/auth.js';
 import { ApiError, api } from '../api/client.js';
 import type { Catalog, Summary } from '../api/types.js';
+import { useAuth } from './useAuth.js';
 
 const STORAGE_KEY = 'woyofal.householdId';
 
@@ -27,6 +29,7 @@ interface AppState {
 const AppContext = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { user, googleEnabled } = useAuth();
   const [householdId, setHouseholdId] = useState<string | null>(() => {
     try {
       return localStorage.getItem(STORAGE_KEY);
@@ -46,6 +49,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .then(setCatalog)
       .catch((err: ApiError) => setError(err.message));
   }, []);
+
+  /**
+   * Quand un compte est connecté, c'est le serveur qui dit quel foyer lui
+   * appartient : le stockage local n'est plus qu'un raccourci de démarrage.
+   */
+  useEffect(() => {
+    if (!googleEnabled) return;
+    if (!user) {
+      setHouseholdId(null);
+      setSummary(null);
+      setLoading(false);
+      return;
+    }
+    let annule = false;
+    authApi
+      .myHousehold()
+      .then(({ household }) => {
+        if (annule) return;
+        setHouseholdId(household?.id ?? null);
+        try {
+          if (household) localStorage.setItem(STORAGE_KEY, household.id);
+          else localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* stockage indisponible : sans conséquence */
+        }
+        if (!household) setLoading(false);
+      })
+      .catch(() => {
+        if (!annule) setLoading(false);
+      });
+    return () => {
+      annule = true;
+    };
+  }, [user, googleEnabled]);
 
   const refresh = useCallback(async () => {
     if (!householdId) {

@@ -67,6 +67,7 @@ automatiquement pour que rien ne soit jamais vide.
 | `npm run typecheck` | Vérifie les types sur les trois paquets. |
 | `npm run build` | Compile tout pour la production. |
 | `npm start` | Démarre le serveur de production (il sert aussi l'application web). |
+| `npm run -w @woyofal/api test` | Lance les 7 tests d'authentification (session, propriété des foyers). |
 | `npm run -w @woyofal/api db:studio` | Ouvre une interface graphique pour inspecter la base. |
 
 ---
@@ -88,6 +89,7 @@ woyofal-map/
 │   └── web/             @woyofal/web — React + Vite + Tailwind, pensé mobile
 └── docs/
     ├── ARCHITECTURE.md      les choix techniques et pourquoi
+    ├── AUTHENTIFICATION.md  connexion Google, session, clé à créer
     ├── BASE-DE-DONNEES.md   le schéma, table par table
     ├── CALCUL-SENELEC.md    l'algorithme des tranches, avec des exemples chiffrés
     └── DEPLOIEMENT.md       mise en ligne

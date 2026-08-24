@@ -1,9 +1,11 @@
 import { kwhForAmount } from '@woyofal/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { requireUser } from '../auth/session.js';
 import { prisma } from '../db.js';
 import { notFound } from '../errors.js';
 import {
+  assertOwner,
   buildSplit,
   buildSummary,
   currentMonth,
@@ -52,8 +54,10 @@ const topUpSchema = z.object({
 export async function householdRoutes(app: FastifyInstance) {
   app.post('/api/households', async (request, reply) => {
     const body = parse(createHouseholdSchema, request.body);
+    const user = await requireUser(request);
     const household = await prisma.household.create({
       data: {
+        userId: user?.id ?? null,
         name: body.name,
         tariffCode: body.tariffCode,
         meterType: body.meterType,
@@ -72,22 +76,38 @@ export async function householdRoutes(app: FastifyInstance) {
     return household;
   });
 
+  /**
+   * Le foyer de la personne connectée. C'est ce que l'application demande au
+   * démarrage : s'il existe, on va droit au tableau de bord.
+   */
+  app.get('/api/households/mine', async (request) => {
+    const user = await requireUser(request);
+    const household = user
+      ? await prisma.household.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, name: true },
+        })
+      : null;
+    return { household };
+  });
+
   app.get('/api/households/:id', async (request) => {
     const { id } = request.params as { id: string };
     const { month } = request.query as { month?: string };
-    return buildSummary(id, month ?? currentMonth());
+    return buildSummary(id, month ?? currentMonth(), await requireUser(request));
   });
 
   app.get('/api/households/:id/summary', async (request) => {
     const { id } = request.params as { id: string };
     const { month } = request.query as { month?: string };
-    return buildSummary(id, month ?? currentMonth());
+    return buildSummary(id, month ?? currentMonth(), await requireUser(request));
   });
 
   app.patch('/api/households/:id', async (request) => {
     const { id } = request.params as { id: string };
     const body = parse(updateHouseholdSchema, request.body);
-    await getHouseholdOrThrow(id);
+    await getHouseholdOrThrow(id, await requireUser(request));
     return prisma.household.update({
       where: { id },
       data: {
@@ -105,7 +125,7 @@ export async function householdRoutes(app: FastifyInstance) {
   app.post('/api/households/:id/members', async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = parse(memberSchema, request.body);
-    const household = await getHouseholdOrThrow(id);
+    const household = await getHouseholdOrThrow(id, await requireUser(request));
     const member = await prisma.member.create({
       data: {
         householdId: id,
@@ -121,15 +141,23 @@ export async function householdRoutes(app: FastifyInstance) {
   app.patch('/api/members/:memberId', async (request) => {
     const { memberId } = request.params as { memberId: string };
     const body = parse(memberSchema.partial(), request.body);
-    const existing = await prisma.member.findUnique({ where: { id: memberId } });
+    const existing = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: { household: true },
+    });
     if (!existing) throw notFound('Ce membre');
+    assertOwner(existing.household, await requireUser(request));
     return prisma.member.update({ where: { id: memberId }, data: body });
   });
 
   app.delete('/api/members/:memberId', async (request, reply) => {
     const { memberId } = request.params as { memberId: string };
-    const existing = await prisma.member.findUnique({ where: { id: memberId } });
+    const existing = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: { household: true },
+    });
     if (!existing) throw notFound('Ce membre');
+    assertOwner(existing.household, await requireUser(request));
     await prisma.member.delete({ where: { id: memberId } });
     reply.code(204);
     return null;
@@ -140,14 +168,14 @@ export async function householdRoutes(app: FastifyInstance) {
   app.get('/api/households/:id/split', async (request) => {
     const { id } = request.params as { id: string };
     const { month } = request.query as { month?: string };
-    return buildSplit(id, month ?? currentMonth());
+    return buildSplit(id, month ?? currentMonth(), await requireUser(request));
   });
 
   // --- Recharges Woyofal ----------------------------------------------------
 
   app.get('/api/households/:id/topups', async (request) => {
     const { id } = request.params as { id: string };
-    await getHouseholdOrThrow(id);
+    await getHouseholdOrThrow(id, await requireUser(request));
     return prisma.topUp.findMany({
       where: { householdId: id },
       orderBy: { purchasedAt: 'desc' },
@@ -162,12 +190,12 @@ export async function householdRoutes(app: FastifyInstance) {
   app.post('/api/households/:id/topups', async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = parse(topUpSchema, request.body);
-    const household = await getHouseholdOrThrow(id);
+    const household = await getHouseholdOrThrow(id, await requireUser(request));
     const plan = await loadPlan(household.tariffCode);
 
     let kwh = body.kwh;
     if (kwh === undefined) {
-      const summary = await buildSummary(id);
+      const summary = await buildSummary(id, currentMonth(), await requireUser(request));
       kwh = kwhForAmount(body.amount, plan, summary.consumedSoFar.kwh).kwh;
     }
 

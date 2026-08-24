@@ -1,9 +1,11 @@
 import { findTemplate } from '@woyofal/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { requireUser } from '../auth/session.js';
 import { prisma } from '../db.js';
 import { notFound } from '../errors.js';
 import {
+  assertOwner,
   computeFromSelection,
   getHouseholdOrThrow,
   serializeAppliance,
@@ -32,7 +34,7 @@ export async function applianceRoutes(app: FastifyInstance) {
   app.post('/api/households/:id/appliances', async (request, reply) => {
     const { id } = request.params as { id: string };
     const body = parse(applianceSchema, request.body);
-    await getHouseholdOrThrow(id);
+    await getHouseholdOrThrow(id, await requireUser(request));
 
     const template = findTemplate(body.templateId);
     if (!template) throw notFound(`L’appareil "${body.templateId}"`);
@@ -85,9 +87,10 @@ export async function applianceRoutes(app: FastifyInstance) {
     const body = parse(updateApplianceSchema, request.body);
     const existing = await prisma.appliance.findUnique({
       where: { id: applianceId },
-      include: { shares: true },
+      include: { shares: true, household: true },
     });
     if (!existing) throw notFound('Cet appareil');
+    assertOwner(existing.household, await requireUser(request));
 
     const options = body.options ?? (JSON.parse(existing.optionsJson) as Record<string, string>);
     // `null` envoyé explicitement = l'utilisateur a choisi une fréquence sur mesure.
@@ -139,8 +142,12 @@ export async function applianceRoutes(app: FastifyInstance) {
 
   app.delete('/api/appliances/:applianceId', async (request, reply) => {
     const { applianceId } = request.params as { applianceId: string };
-    const existing = await prisma.appliance.findUnique({ where: { id: applianceId } });
+    const existing = await prisma.appliance.findUnique({
+      where: { id: applianceId },
+      include: { household: true },
+    });
     if (!existing) throw notFound('Cet appareil');
+    assertOwner(existing.household, await requireUser(request));
     await prisma.appliance.delete({ where: { id: applianceId } });
     reply.code(204);
     return null;

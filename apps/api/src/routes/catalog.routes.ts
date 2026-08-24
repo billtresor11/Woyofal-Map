@@ -12,8 +12,9 @@ import {
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { notFound } from '../errors.js';
-import { buildSummary } from '../services/household.service.js';
+import { buildSummary, currentMonth } from '../services/household.service.js';
 import { loadPlan, loadPlans } from '../services/tariff.service.js';
+import { requireUser } from '../auth/session.js';
 import { prisma } from '../db.js';
 import { parse } from '../validate.js';
 
@@ -87,7 +88,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     let baseKwh = 0;
     let tariffCode = body.tariffCode ?? DEFAULT_TARIFF_CODE;
     if (body.householdId) {
-      const summary = await buildSummary(body.householdId);
+      const summary = await buildSummary(body.householdId, currentMonth(), await requireUser(request));
       baseKwh = summary.totals.kwhPerMonth;
       tariffCode = summary.household.tariffCode;
     }

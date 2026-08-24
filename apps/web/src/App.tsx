@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ErrorBanner, Spinner } from './components/ui.js';
 import { TabBar, type TabId } from './components/TabBar.js';
 import { AppProvider, useApp } from './hooks/useApp.js';
+import { AuthProvider, useAuth } from './hooks/useAuth.js';
+import { LoginScreen } from './screens/LoginScreen.js';
 import { EstimatorScreen } from './screens/EstimatorScreen.js';
 import { HouseholdScreen } from './screens/HouseholdScreen.js';
 import { InventoryScreen } from './screens/InventoryScreen.js';
@@ -36,10 +38,30 @@ function Shell() {
   );
 }
 
-export default function App() {
+/**
+ * Aiguillage d'entrée :
+ *   session en cours de vérification → attente
+ *   personne connectée               → écran de connexion
+ *   connectée mais sans foyer        → tunnel d'accueil
+ *   connectée avec un foyer          → tableau de bord
+ */
+function Gate() {
+  const { user, googleEnabled, loading } = useAuth();
+
+  if (loading) return <Spinner label="Un instant..." />;
+  if (googleEnabled && !user) return <LoginScreen />;
+
   return (
     <AppProvider>
       <Shell />
     </AppProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
   );
 }
