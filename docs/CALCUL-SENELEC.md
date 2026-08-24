@@ -13,24 +13,28 @@ il tombe, selon le **cumul déjà consommé** sur la période.
 
 Grille domestique petite puissance (valeurs par défaut, modifiables dans l'app) :
 
-| Tranche | De … à … | Prix du kWh | TVA |
+**Les prix sont TTC** : le total en sortie des tranches **est** la facture. Aucune
+taxe n'est ajoutée par-dessus.
+
+| Tranche | De … à … | Petite puissance (DPP) | Moyenne puissance (DMP) |
 |---|---|---|---|
-| Tranche 1 (sociale) | 0 → 150 kWh | 91,17 F | exonérée |
-| Tranche 2 | 150 → 250 kWh | 101,44 F | 18 % |
-| Tranche 3 | au-delà de 250 kWh | 116,35 F | 18 % |
+| Tranche 1 | 0 → 150 kWh | 82,00 F | 111,23 F |
+| Tranche 2 | 150 → 250 kWh | 136,49 F | 143,54 F |
+| Tranche 3 | au-delà de 250 kWh | 159,36 F | 158,46 F |
 
 ### Exemple chiffré : 300 kWh dans le mois
 
 ```
-  150 premiers kWh  ×  91,17 F  = 13 675,50 F   (pas de TVA : tranche sociale)
-  100 suivants      × 101,44 F  = 10 144,00 F   + TVA 1 825,92 F
-   50 derniers      × 116,35 F  =  5 817,50 F   + TVA 1 047,15 F
-  ─────────────────────────────────────────────────────────────
-  Total                                          32 510 FCFA
+  150 premiers kWh  ×  82,00 F  = 12 300 F
+  100 suivants      × 136,49 F  = 13 649 F
+   50 derniers      × 159,36 F  =  7 968 F
+  ─────────────────────────────────────────
+  Facture du mois                 33 917 FCFA
+  Coût journalier  = 33 917 / 30 =  1 131 FCFA
 ```
 
-Prix moyen réellement payé : **108,4 F/kWh**. Prix du *dernier* kWh consommé :
-**137,3 F/kWh**. Cet écart est exactement ce que l'application rend visible.
+Prix moyen réellement payé : **113,1 F/kWh**. Prix du *dernier* kWh consommé :
+**159,4 F/kWh**. Cet écart est exactement ce que l'application rend visible.
 
 ---
 
@@ -48,10 +52,10 @@ sliceByTier(140, 30, woyofal)   // → [T1: 10 kWh, T2: 20 kWh]   ← on bascule
 
 ### `computeBill(kWh, grille, { déjàConsommé })`
 
-Applique les prix, la TVA (en respectant l'exonération de la tranche sociale), la taxe
-communale éventuelle et la redevance fixe. Renvoie le détail ligne par ligne, le total,
+Applique les prix de chaque tranche et renvoie le détail ligne par ligne, le total,
 le prix moyen, la tranche courante et **combien de kWh restent avant la tranche
-suivante**.
+suivante**. Les prix étant TTC, le total obtenu est directement la facture — c'est
+le point qui faussait la version précédente, où une TVA était ajoutée par-dessus.
 
 ### `marginalCost(déjàConsommé, kWhSupplémentaires, grille)`
 
@@ -59,10 +63,10 @@ Le vrai coût d'une consommation en plus, **sachant où l'on en est dans le mois
 la fonction derrière l'onglet 2 :
 
 > 3 h de PlayStation 5 = 0,63 kWh
-> • le 3 du mois (tranche 1) → **57 F**
-> • le 28 du mois (tranche 3) → **86 F**
+> • le 3 du mois (tranche 1) → **52 F**
+> • le 28 du mois (tranche 3) → **100 F**
 
-La même action, la même durée, 50 % plus cher. Aucune autre application ne dit ça à
+La même action, la même durée, près du double. Aucune autre application ne dit ça à
 l'utilisateur.
 
 ### `kwhForAmount(montant, grille, déjàConsommé)`
@@ -70,26 +74,35 @@ l'utilisateur.
 Le calcul inverse, et la question numéro un des utilisateurs Woyofal :
 **« avec 5 000 F, je reçois combien de kWh ? »**
 
-On parcourt les tranches en dépensant le budget palier par palier. Réponse : 54,8 kWh en
-début de mois… mais seulement 36,4 kWh si l'on a déjà consommé 260 kWh. La recharge
+On parcourt les tranches en dépensant le budget palier par palier. Réponse : 61,0 kWh en
+début de mois… mais seulement 31,4 kWh si l'on a déjà consommé 260 kWh. La recharge
 « rétrécit » en fin de mois, et l'application l'explique.
 
 ---
 
-## 3. Prépayé (Woyofal) contre postpayé (facture)
+## 3. La consommation, avant le prix
 
-| | Woyofal (prépayé) | Facture papier (postpayé) |
-|---|---|---|
-| Période des tranches | **le mois calendaire** | **deux mois** (facture bimestrielle) |
-| Remise à zéro | chaque 1er du mois | à chaque facture |
-| Redevance fixe | aucune | prélevée sur la facture |
+Avant de parler d'argent, il faut des kilowattheures. Pour chaque appareil :
 
-Le modèle porte un champ `periodMonths` (1 ou 2). `computeMonthlyBill()` raisonne sur la
-période de la grille puis ramène le résultat au mois. Conséquence non évidente, testée :
-100 kWh par mois en prépayé restent en tranche 1, alors qu'en postpayé les 200 kWh du
-bimestre font basculer en tranche 2.
+```
+kWh/jour = (puissance_W × heures_par_jour × coefficient_usage) / 1000 × quantité
+```
 
----
+Le **coefficient d'usage** est le détail que la plupart des calculateurs ratent. Un
+réfrigérateur est branché 24 h sur 24, mais son compresseur ne tourne qu'environ 30 %
+du temps : son coefficient est de **0,3**. Une ampoule allumée consomme en continu :
+coefficient **1**. Sans ce facteur, on surestime un frigo de plus de 200 %.
+
+La consommation du foyer est la somme de tous les appareils, ramenée à **30 jours**.
+C'est ce total mensuel — et lui seul — qui entre dans les tranches. On ne calcule
+jamais le prix d'un appareil isolément.
+
+## 3 bis. Périodicité
+
+Les tranches Woyofal se remettent à zéro **chaque mois**. Le moteur sait aussi
+raisonner sur une période de deux mois (facturation bimestrielle) via le champ
+`periodMonths` : `computeMonthlyBill()` applique alors les seuils sur le cumul des
+deux mois puis ramène le résultat au mois.
 
 ## 4. La jauge affichée à l'utilisateur
 
@@ -116,8 +129,8 @@ boucle de fiabilité du produit.
 
 ## 6. ⚠️ Sur la fiabilité des prix
 
-Les valeurs livrées correspondent aux grilles domestiques publiées par la Senelec, mais
-**elles changent** et doivent être confirmées sur un reçu réel. Le projet est construit
+Les valeurs livrées sont celles fournies par le client, mais **les grilles changent** et
+doivent être confirmées sur un reçu réel. Le projet est construit
 pour que ce ne soit jamais un problème :
 
 - un seul fichier source (`core/src/tariffs.ts`), avec la source et la date d'effet ;

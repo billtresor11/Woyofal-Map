@@ -21,8 +21,12 @@ import type { BillLine, BillResult, TariffPlan, TariffTier } from './types.js';
  * acceptent `previousKwh` : les kWh déjà consommés sur la période.
  */
 
-/** Nombre de jours moyen d'un mois (365,25 / 12). */
-export const DAYS_PER_MONTH = 30.4375;
+/**
+ * Cycle de facturation : 30 jours pleins.
+ * C'est la base de calcul retenue — la facture mensuelle divisée par 30 donne
+ * le coût journalier affiché à l'utilisateur.
+ */
+export const DAYS_PER_MONTH = 30;
 
 export function roundFcfa(value: number): number {
   return Math.round(value);

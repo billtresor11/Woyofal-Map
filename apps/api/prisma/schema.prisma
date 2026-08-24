@@ -114,7 +114,7 @@ model Appliance {
   watts       Float
   dutyCycle   Float
   hoursPerDay Float
-  daysPerWeek Int     @default(7)
+  daysPerWeek Float   @default(7)
   alwaysOn    Boolean @default(false)
   kwhPerDay   Float
   kwhPerMonth Float

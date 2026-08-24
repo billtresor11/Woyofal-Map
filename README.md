@@ -15,7 +15,7 @@ appliquant discrètement les tranches tarifaires de la Senelec.
 |---|---|---|
 | 1 | **Mes appareils** | Inventaire visuel. On clique sur un frigo, on dit qu'il fait 200 litres, l'app en déduit la consommation. Les appareils qui tournent **24h/24** sont isolés dans un bloc à part : c'est le socle incompressible de la facture. |
 | 2 | **Combien ça coûte ?** | Estimateur ponctuel : « 3 h de PlayStation ce soir, ça fait combien ? ». La réponse tient compte de la tranche déjà atteinte dans le mois. Deuxième mode : « avec 5 000 F de recharge, je reçois combien de kWh ? ». |
-| 3 | **Chez nous** | Colocation / famille. Jusqu'à une dizaine de profils, séparation des appareils **communs** (frigo, télé du salon) et **personnels** (PC de la chambre, clim d'une chambre), et répartition claire de la facture en fin de mois. |
+| 3 | **Chez nous** | Colocation / famille. Séparation des appareils **communs** (frigo, télé du salon) et **personnels** (PC de la chambre, clim d'une chambre). Règle de partage : *part de chacun = coût des communs ÷ nombre d'occupants + coût de ses propres appareils*. |
 
 ---
 
@@ -101,8 +101,9 @@ enregistré.
 
 ## ⚠️ À propos des prix
 
-Les prix du kWh livrés par défaut correspondent aux grilles domestiques publiées par la
-Senelec. **Ils évoluent** (révisions tarifaires, compensations de l'État). Ils sont donc :
+Les prix du kWh livrés par défaut sont ceux de la grille Woyofal fournie par le client,
+**toutes taxes comprises** : le total en sortie des tranches est directement la facture.
+Ces grilles **évoluent**. Elles sont donc :
 
 1. isolés dans un seul fichier (`packages/core/src/tariffs.ts`),
 2. recopiés en base de données au démarrage,

@@ -1,4 +1,4 @@
-import { computeMonthlyBill, marginalCost } from './billing.js';
+import { DAYS_PER_MONTH, computeMonthlyBill, marginalCost } from './billing.js';
 import type { ApplianceInput, TariffPlan } from './types.js';
 
 /**
@@ -100,7 +100,7 @@ export function estimatePunctual(
   alreadyConsumedKwh = 0,
 ): PunctualEstimate {
   const bill = marginalCost(alreadyConsumedKwh, kwh, plan);
-  const dailyMonth = marginalCost(alreadyConsumedKwh, kwh * 30.4375, plan);
+  const dailyMonth = marginalCost(alreadyConsumedKwh, kwh * DAYS_PER_MONTH, plan);
 
   return {
     kwh: Math.round(kwh * 1000) / 1000,

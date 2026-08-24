@@ -34,7 +34,7 @@ import {
  * plusieurs téléphones.
  */
 
-const STORAGE_KEY = 'woyofal.standalone.db';
+const STORAGE_KEY = 'woyofal.standalone.db.v2';
 
 interface DbHousehold {
   id: string;
@@ -295,8 +295,10 @@ function addAppliance(householdId: string, body: Record<string, unknown>) {
   const consumption = computeConsumption(template, {
     templateId: template.id,
     options,
-    usageProfileId: body.usageProfileId as string | undefined,
+    usageProfileId: (body.usageProfileId as string) ?? undefined,
     quantity: body.quantity as number | undefined,
+    hoursPerDay: body.hoursPerDay as number | undefined,
+    daysPerWeek: body.daysPerWeek as number | undefined,
   });
   const row: DbAppliance = {
     id: newId(),
@@ -324,7 +326,8 @@ function updateAppliance(id: string, body: Record<string, unknown>) {
   if (!template) throw new NotFound('Cet appareil est introuvable.');
 
   row.options = (body.options as Record<string, string>) ?? row.options;
-  row.usageProfileId = (body.usageProfileId as string) ?? row.usageProfileId;
+  // `null` transmis explicitement = fréquence sur mesure, sans profil prédéfini.
+  if (body.usageProfileId !== undefined) row.usageProfileId = (body.usageProfileId as string) ?? null;
   if (body.label !== undefined) row.label = body.label as string;
   if (body.ownership !== undefined) row.ownership = body.ownership as 'SHARED' | 'PRIVATE';
   if (body.ownerId !== undefined) row.ownerId = (body.ownerId as string) ?? null;
@@ -334,6 +337,8 @@ function updateAppliance(id: string, body: Record<string, unknown>) {
     options: row.options,
     usageProfileId: row.usageProfileId ?? undefined,
     quantity: (body.quantity as number) ?? row.quantity,
+    hoursPerDay: body.hoursPerDay as number | undefined,
+    daysPerWeek: body.daysPerWeek as number | undefined,
   });
   row.quantity = row.consumption.quantity;
   save();
@@ -395,7 +400,7 @@ function seedIfEmpty(): string | null {
       label: template.name,
       options: selection.options,
       usageProfileId: selection.usageProfileId ?? null,
-      quantity: 1,
+      quantity: computeConsumption(template, selection).quantity,
       ownership,
       ownerId,
       roomId: null,
@@ -409,7 +414,18 @@ function seedIfEmpty(): string | null {
 }
 
 export function initStandalone(): string | null {
-  return seedIfEmpty();
+  const demoId = seedIfEmpty();
+  // Un foyer mémorisé qui n'existe plus (base réinitialisée) renverrait l'utilisateur
+  // sur une erreur : on le raccroche silencieusement à la démonstration.
+  try {
+    const stored = localStorage.getItem('woyofal.householdId');
+    if (stored && !db().households.some((h) => h.id === stored)) {
+      localStorage.removeItem('woyofal.householdId');
+    }
+  } catch {
+    /* stockage indisponible : rien à réparer */
+  }
+  return demoId;
 }
 
 /**
@@ -440,8 +456,10 @@ export async function handleStandalone<T>(
     const consumption = computeConsumption(template, {
       templateId: template.id,
       options: (payload.options as Record<string, string>) ?? {},
-      usageProfileId: payload.usageProfileId as string | undefined,
+      usageProfileId: (payload.usageProfileId as string) ?? undefined,
       quantity: payload.quantity as number | undefined,
+      hoursPerDay: payload.hoursPerDay as number | undefined,
+      daysPerWeek: payload.daysPerWeek as number | undefined,
     });
     const householdId = payload.householdId as string | undefined;
     const summary = householdId ? buildSummary(householdId) : null;

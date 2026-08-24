@@ -51,7 +51,7 @@ export function defaultSelection(template: ApplianceTemplate): ApplianceSelectio
     templateId: template.id,
     options,
     usageProfileId: template.alwaysOn ? undefined : template.defaultUsageProfileId,
-    quantity: 1,
+    quantity: template.defaultQuantity ?? 1,
   };
 }
 

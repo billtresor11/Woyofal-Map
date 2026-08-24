@@ -3,7 +3,6 @@ import { api } from '../api/client.js';
 import type { TariffPlan } from '../api/types.js';
 import { Sheet } from '../components/ui.js';
 import { useApp } from '../hooks/useApp.js';
-import { fcfa } from '../lib/format.js';
 
 /**
  * Réglages. Le point important : les prix Senelec sont MODIFIABLES.
@@ -98,8 +97,8 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
         <section>
           <p className="mb-1 text-base font-black">💰 Le prix du kWh</p>
           <p className="mb-3 text-xs font-bold leading-snug text-ink-muted">
-            Ces prix viennent de la grille domestique Senelec. Ils changent parfois : prenez votre
-            dernier reçu Woyofal et corrigez-les ici pour une estimation exacte.
+            Ces prix viennent de la grille Woyofal. Ils changent parfois : prenez votre dernier
+            reçu et corrigez-les ici pour une estimation exacte.
           </p>
           <div className="space-y-2">
             {summary.plan.tiers.map((tier) => (
@@ -108,7 +107,6 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                   <p className="text-sm font-extrabold">{tier.label}</p>
                   <p className="text-xs font-bold text-ink-muted">
                     de {tier.fromKwh} à {tier.toKwh ?? '∞'} kWh
-                    {tier.vatExempt ? ' · sans TVA' : ''}
                   </p>
                 </div>
                 <input
@@ -124,10 +122,7 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
             ))}
           </div>
           <p className="mt-2 text-xs font-bold text-ink-muted">
-            TVA appliquée : {Math.round(summary.plan.vatRate * 100)}%
-            {summary.plan.fixedFeePerMonth > 0
-              ? ` · redevance ${fcfa(summary.plan.fixedFeePerMonth)} par mois`
-              : ''}
+            Ces prix sont toutes taxes comprises : le total affiché est bien ce que vous payez.
           </p>
         </section>
 

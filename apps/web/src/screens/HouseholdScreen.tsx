@@ -129,16 +129,7 @@ export function HouseholdScreen() {
                     {member.kwhPunctual > 0 ? <span>⏱️ Sessions : {fmtKwh(member.kwhPunctual)}</span> : null}
                   </div>
 
-                  <PresenceSlider
-                    memberId={member.memberId}
-                    initial={
-                      summary.members.find((item) => item.id === member.memberId)?.presenceRatio ?? 1
-                    }
-                    onChanged={async () => {
-                      await refresh();
-                      await loadSplit();
-                    }}
-                  />
+
                 </div>
               ))}
             </section>
@@ -153,8 +144,8 @@ export function HouseholdScreen() {
             <div className="rounded-3xl bg-sand-100 px-4 py-4">
               <p className="mb-1 text-sm font-black">⚖️ Comment on partage</p>
               <ul className="space-y-1 text-sm font-bold leading-snug text-ink-soft">
-                <li>• Les appareils communs sont partagés selon le temps de présence de chacun.</li>
-                <li>• Les appareils personnels sont à la charge de leur propriétaire.</li>
+                <li>• Les appareils communs sont divisés à parts égales entre les occupants.</li>
+                <li>• Chacun paie en plus ses propres appareils et ses propres sessions.</li>
                 <li>• Les kWh sont comptés au prix moyen du foyer, pas au prix de la dernière tranche.</li>
               </ul>
             </div>
@@ -211,46 +202,6 @@ export function HouseholdScreen() {
           await refresh();
           await loadSplit();
         }}
-      />
-    </div>
-  );
-}
-
-/** Le curseur de présence : "j’étais là combien de temps ce mois-ci ?" */
-function PresenceSlider({
-  memberId,
-  initial,
-  onChanged,
-}: {
-  memberId: string;
-  initial: number;
-  onChanged: () => void;
-}) {
-  const [value, setValue] = useState(initial);
-  useEffect(() => setValue(initial), [initial]);
-
-  async function commit(next: number) {
-    await api.patch(`/api/members/${memberId}`, { presenceRatio: next });
-    onChanged();
-  }
-
-  return (
-    <div className="border-t border-sand-200 px-4 py-3">
-      <div className="flex items-center justify-between text-xs font-bold text-ink-soft">
-        <span>🗓️ Présent ce mois-ci</span>
-        <span>{Math.round(value * 100)}%</span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={100}
-        step={5}
-        value={Math.round(value * 100)}
-        onChange={(event) => setValue(Number(event.target.value) / 100)}
-        onMouseUp={() => commit(value)}
-        onTouchEnd={() => commit(value)}
-        className="mt-1 w-full accent-teal-500"
-        aria-label="Temps de présence"
       />
     </div>
   );

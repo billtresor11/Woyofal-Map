@@ -87,8 +87,8 @@ c'est ajouter un objet de ce genre : pas de code à écrire.
 ### b. Le taux de fonctionnement réel (« duty cycle »)
 
 C'est le détail que la plupart des calculateurs ratent. Un réfrigérateur est branché
-24 h sur 24, mais son compresseur ne tourne qu'environ 40 % du temps. Sans ce facteur,
-on surestime sa facture de 150 %. Chaque appareil du catalogue porte donc un
+24 h sur 24, mais son compresseur ne tourne qu'environ **30 %** du temps. Sans ce
+facteur, on surestime sa facture de plus de 200 %. Chaque appareil du catalogue porte donc un
 `dutyCycle`, et certaines réponses le modifient (une clim réglée à 18 °C tourne presque
 en continu, à 26 °C elle souffle par intermittence).
 
@@ -149,7 +149,23 @@ L'application est pensée pour un téléphone d'entrée de gamme sur un réseau 
 
 ---
 
-## 6. Ce que je ferais ensuite (par ordre de valeur)
+## 6. Le tunnel d'accueil
+
+Personne n'arrive dans un tableau de bord vide. Quatre étapes animées, une question à
+la fois (`apps/web/src/screens/Onboarding.tsx`) :
+
+1. **Ma maison** — son nom et le type de compteur Woyofal (petite ou moyenne puissance).
+2. **Qui habite ici** — les prénoms ; avatars et couleurs sont attribués automatiquement.
+3. **Mes appareils** — une grille d'illustrations ; chaque appareil est affecté d'un
+   geste à un occupant ou marqué « commun ».
+4. **C'est prêt** — la facture estimée s'affiche en montant progressif, puis on entre
+   dans l'application.
+
+Tout est créé à la fin, en une seule fois : le foyer, ses occupants, puis ses appareils.
+Les animations sont des keyframes Tailwind (`step-in`, `rise`, `float`, `check-pop`,
+`halo`) et respectent `prefers-reduced-motion`.
+
+## 7. Ce que je ferais ensuite (par ordre de valeur)
 
 1. **Photo du reçu Woyofal** : lecture automatique du montant et des kWh pour caler
    l'estimation sur la réalité sans rien saisir.

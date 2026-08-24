@@ -20,6 +20,7 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
   const [pickerOpen, setPickerOpen] = useState(false);
   const [template, setTemplate] = useState<ApplianceTemplate | null>(null);
   const [editing, setEditing] = useState<Appliance | null>(null);
+  const [suggestedLabel, setSuggestedLabel] = useState<string | undefined>();
 
   const costById = useMemo(() => {
     const map = new Map<string, number>();
@@ -34,8 +35,9 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
   const sortByCost = (a: Appliance, b: Appliance) =>
     (costById.get(b.id) ?? 0) - (costById.get(a.id) ?? 0);
 
-  function openTemplate(picked: ApplianceTemplate) {
+  function openTemplate(picked: ApplianceTemplate, suggestedName?: string) {
     setEditing(null);
+    setSuggestedLabel(suggestedName);
     setTemplate(picked);
     setPickerOpen(false);
   }
@@ -43,6 +45,7 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
   function openExisting(appliance: Appliance) {
     const found = catalog?.templates.find((item) => item.id === appliance.templateId) ?? null;
     setEditing(appliance);
+    setSuggestedLabel(undefined);
     setTemplate(found);
   }
 
@@ -153,6 +156,7 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
         open={template !== null}
         template={template}
         existing={editing}
+        suggestedLabel={suggestedLabel}
         householdId={summary.household.id}
         members={summary.members}
         rooms={summary.rooms}

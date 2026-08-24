@@ -25,9 +25,9 @@ function appliance(
 }
 
 const members: MemberInput[] = [
-  { id: 'a', name: 'Awa', emoji: '👩', color: '#F97316', presenceRatio: 1 },
-  { id: 'b', name: 'Babacar', emoji: '👨', color: '#0EA5E9', presenceRatio: 1 },
-  { id: 'c', name: 'Coumba', emoji: '👧', color: '#22C55E', presenceRatio: 1 },
+  { id: 'a', name: 'Awa', emoji: '👩', color: '#F97316' },
+  { id: 'b', name: 'Babacar', emoji: '👨', color: '#0EA5E9' },
+  { id: 'c', name: 'Coumba', emoji: '👧', color: '#22C55E' },
 ];
 
 describe('répartition de la facture', () => {
@@ -57,20 +57,22 @@ describe('répartition de la facture', () => {
     );
   });
 
-  it('reduit la part de celui qui est absent la moitié du mois', () => {
+  it('applique la règle : commun ÷ nombre d’occupants + appareils personnels', () => {
+    const frigo = appliance('1', 'refrigerateur', 'SHARED');
+    const pc = appliance('2', 'ordinateur', 'PRIVATE', 'b');
     const result = splitHousehold({
       month: '2026-08',
-      members: [
-        members[0]!,
-        { ...members[1]!, presenceRatio: 0.5 },
-        members[2]!,
-      ],
-      appliances: [appliance('1', 'refrigerateur', 'SHARED')],
+      members,
+      appliances: [frigo, pc],
       plan,
     });
+
+    const commun = frigo.consumption.kwhPerMonth / members.length;
     const awa = result.members.find((m) => m.memberId === 'a')!;
     const babacar = result.members.find((m) => m.memberId === 'b')!;
-    expect(babacar.kwhTotal).toBeCloseTo(awa.kwhTotal / 2, 1);
+
+    expect(awa.kwhTotal).toBeCloseTo(commun, 1);
+    expect(babacar.kwhTotal).toBeCloseTo(commun + pc.consumption.kwhPerMonth, 1);
   });
 
   it('affecte une session ponctuelle a son auteur', () => {

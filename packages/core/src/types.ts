@@ -18,7 +18,8 @@ export type ApplianceCategoryId =
   | 'buanderie'
   | 'numerique'
   | 'eclairage'
-  | 'eau';
+  | 'eau'
+  | 'divers';
 
 export interface ApplianceCategory {
   id: ApplianceCategoryId;
@@ -94,6 +95,13 @@ export interface ApplianceTemplate {
   defaultUsageProfileId?: string;
   /** Peut-on en posseder plusieurs exemplaires identiques ? */
   allowQuantity: boolean;
+  /** Nombre proposé par défaut (5 ampoules plutôt qu'une seule). */
+  defaultQuantity?: number;
+  /**
+   * Appareil « libre » : l'utilisateur saisit lui-même le nom et situe la
+   * puissance par comparaison avec un appareil qu'il connaît déjà.
+   */
+  isCustom?: boolean;
   /** Conseils d'économie affiches dans la fiche appareil. */
   tips: string[];
 }
@@ -210,11 +218,7 @@ export interface MemberInput {
   name: string;
   emoji: string;
   color: string;
-  /**
-   * Part de présence sur le mois (0-1).
-   * Un colocataire absent 2 semaines paie moitié moins les charges communes.
-   */
-  presenceRatio: number;
+
 }
 
 export interface ApplianceInput {

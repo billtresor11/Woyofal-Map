@@ -14,8 +14,11 @@ const applianceSchema = z.object({
   templateId: z.string().min(1),
   label: z.string().min(1).max(60).optional(),
   options: z.record(z.string()).default({}),
-  usageProfileId: z.string().optional(),
-  quantity: z.number().int().min(1).max(50).default(1),
+  usageProfileId: z.string().nullish(),
+  quantity: z.number().int().min(1).max(999).default(1),
+  /** Fréquence sur mesure, quand aucun choix proposé ne convient. */
+  hoursPerDay: z.number().min(0).max(24).optional(),
+  daysPerWeek: z.number().min(0).max(7).optional(),
   ownership: z.enum(['SHARED', 'PRIVATE']).default('SHARED'),
   ownerId: z.string().nullish(),
   roomId: z.string().nullish(),
@@ -37,8 +40,10 @@ export async function applianceRoutes(app: FastifyInstance) {
     const consumption = computeFromSelection({
       templateId: body.templateId,
       options: body.options,
-      usageProfileId: body.usageProfileId,
+      usageProfileId: body.usageProfileId ?? undefined,
       quantity: body.quantity,
+      hoursPerDay: body.hoursPerDay,
+      daysPerWeek: body.daysPerWeek,
     });
 
     const appliance = await prisma.appliance.create({
@@ -85,11 +90,16 @@ export async function applianceRoutes(app: FastifyInstance) {
     if (!existing) throw notFound('Cet appareil');
 
     const options = body.options ?? (JSON.parse(existing.optionsJson) as Record<string, string>);
+    // `null` envoyé explicitement = l'utilisateur a choisi une fréquence sur mesure.
+    const usageProfileId =
+      body.usageProfileId === undefined ? existing.usageProfileId : body.usageProfileId;
     const consumption = computeFromSelection({
       templateId: existing.templateId,
       options,
-      usageProfileId: body.usageProfileId ?? existing.usageProfileId ?? undefined,
+      usageProfileId: usageProfileId ?? undefined,
       quantity: body.quantity ?? existing.quantity,
+      hoursPerDay: body.hoursPerDay,
+      daysPerWeek: body.daysPerWeek,
     });
 
     const updated = await prisma.appliance.update({
@@ -100,7 +110,7 @@ export async function applianceRoutes(app: FastifyInstance) {
         ...(body.ownerId !== undefined ? { ownerId: body.ownerId } : {}),
         ...(body.roomId !== undefined ? { roomId: body.roomId } : {}),
         optionsJson: JSON.stringify(options),
-        usageProfileId: body.usageProfileId ?? existing.usageProfileId,
+        usageProfileId,
         quantity: consumption.quantity,
         watts: consumption.watts,
         dutyCycle: consumption.dutyCycle,

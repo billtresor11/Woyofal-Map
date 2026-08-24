@@ -172,6 +172,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M26 58v2M32 58v2M38 58v2" />
     </>
   ),
+  autre: (
+    <>
+      <path d="M14 10h10M40 10h10a4 4 0 0 1 4 4v10M54 40v10a4 4 0 0 1-4 4H40M24 54H14a4 4 0 0 1-4-4V40M10 24V14a4 4 0 0 1 4-4" />
+      <path d="M32 23v18M23 32h18" />
+    </>
+  ),
   pompe_eau: (
     <>
       <rect x="13" y="30" width="26" height="22" rx="5" />

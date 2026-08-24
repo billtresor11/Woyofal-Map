@@ -1,20 +1,37 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client.js';
 import type { Appliance, ApplianceTemplate, Member, PreviewResult, Room } from '../api/types.js';
-import { fcfa, kwh as fmtKwh } from '../lib/format.js';
+import { duration as fmtDuration, fcfa, kwh as fmtKwh } from '../lib/format.js';
 import { ApplianceIcon } from './ApplianceIcon.js';
 import { Segmented, Sheet } from './ui.js';
 
 /**
  * Écran de configuration d’un appareil.
- * Regle absolue : aucune saisie de puissance, aucun watt, aucune formule.
- * L’utilisateur répond à des questions ("Il est de quelle taille ?") et voit
- * immédiatement l’effet en FCFA. Le calcul, lui, se fait cote serveur.
+ * Règle absolue : aucune saisie de puissance, aucun watt, aucune formule.
+ * L’utilisateur répond à des questions (« Il est de quelle taille ? ») et voit
+ * immédiatement l’effet en FCFA. Le calcul, lui, se fait côté serveur.
+ *
+ * Trois libertés y sont garanties, parce qu’aucune liste ne couvre tout :
+ *   - le NOM est libre (« Congélateur de la boutique ») ;
+ *   - le NOMBRE est libre (17 ampoules, pas seulement 5, 8 ou 12) ;
+ *   - la FRÉQUENCE est libre (3 h 45 par jour, 5 jours sur 7).
  */
+
+/** Paliers du curseur « jours par semaine », des plus rares aux quotidiens. */
+const DAY_STEPS = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 7];
+
+function daysLabel(days: number): string {
+  if (days <= 0.25) return 'Environ une fois par mois';
+  if (days <= 0.5) return 'Une fois tous les 15 jours';
+  if (days >= 7) return 'Tous les jours';
+  return `${days} jour${days > 1 ? 's' : ''} par semaine`;
+}
+
 export function ApplianceConfigSheet({
   open,
   template,
   existing,
+  suggestedLabel,
   householdId,
   members,
   rooms,
@@ -24,14 +41,20 @@ export function ApplianceConfigSheet({
   open: boolean;
   template: ApplianceTemplate | null;
   existing?: Appliance | null;
+  /** Nom repris de la recherche, quand l'appareil n'était pas au catalogue. */
+  suggestedLabel?: string;
   householdId: string;
   members: Member[];
   rooms: Room[];
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const [label, setLabel] = useState('');
   const [options, setOptions] = useState<Record<string, string>>({});
-  const [usageProfileId, setUsageProfileId] = useState<string | undefined>();
+  /** `null` = fréquence sur mesure, définie aux curseurs. */
+  const [usageProfileId, setUsageProfileId] = useState<string | null>(null);
+  const [customHours, setCustomHours] = useState(3);
+  const [customDays, setCustomDays] = useState(7);
   const [quantity, setQuantity] = useState(1);
   const [ownership, setOwnership] = useState<'SHARED' | 'PRIVATE'>('SHARED');
   const [ownerId, setOwnerId] = useState<string | null>(null);
@@ -41,24 +64,26 @@ export function ApplianceConfigSheet({
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
 
-  // Un attribut "nombre" gère déjà la quantité : sinon on affiche un compteur.
-  const hasQuantityAttribute = useMemo(
-    () => Boolean(template?.attributes.some((attribute) => attribute.key === 'nombre')),
-    [template],
-  );
-
   useEffect(() => {
     if (!open || !template) return;
     const defaults: Record<string, string> = {};
     for (const attribute of template.attributes) defaults[attribute.key] = attribute.defaultOptionId;
     setOptions(existing ? { ...defaults, ...existing.options } : defaults);
-    setUsageProfileId(existing?.usageProfileId ?? template.defaultUsageProfileId);
-    setQuantity(existing?.quantity ?? 1);
+    setLabel(existing?.label ?? suggestedLabel ?? (template.isCustom ? '' : template.name));
+    setQuantity(existing?.quantity ?? template.defaultQuantity ?? 1);
+
+    // Un appareil enregistré sans profil utilisait une fréquence sur mesure.
+    const custom = Boolean(existing) && !existing?.usageProfileId && !template.alwaysOn;
+    setUsageProfileId(custom ? null : (existing?.usageProfileId ?? template.defaultUsageProfileId ?? null));
+    setCustomHours(existing?.consumption.hoursPerDay ?? 3);
+    setCustomDays(existing?.consumption.daysPerWeek ?? 7);
+
     setOwnership(existing?.ownership ?? 'SHARED');
     setOwnerId(existing?.ownerId ?? null);
     setRoomId(existing?.roomId ?? null);
+    setPreview(null);
     setError(null);
-  }, [open, template, existing]);
+  }, [open, template, existing, suggestedLabel]);
 
   // Aperçu en direct : la valeur affichée est le COÛT AJOUTÉ à la facture.
   useEffect(() => {
@@ -68,8 +93,9 @@ export function ApplianceConfigSheet({
       api
         .post<PreviewResult>(`/api/catalog/${template.id}/preview`, {
           options,
-          usageProfileId,
-          quantity: hasQuantityAttribute ? undefined : quantity,
+          usageProfileId: usageProfileId ?? undefined,
+          quantity,
+          ...(usageProfileId === null ? { hoursPerDay: customHours, daysPerWeek: customDays } : {}),
           householdId,
         })
         .then((result) => {
@@ -78,9 +104,14 @@ export function ApplianceConfigSheet({
         .catch(() => undefined);
     }, 120);
     return () => clearTimeout(timer);
-  }, [open, template, options, usageProfileId, quantity, householdId, hasQuantityAttribute]);
+  }, [open, template, options, usageProfileId, customHours, customDays, quantity, householdId]);
 
   if (!template) return null;
+
+  // Certaines réponses transforment l’appareil en appareil 24h/24 : la question
+  // de la fréquence n’a alors plus de sens, et on la retire.
+  const alwaysOn = preview?.consumption.alwaysOn ?? template.alwaysOn;
+  const profiles = template.usageProfiles ?? [];
 
   async function save() {
     if (!template) return;
@@ -88,9 +119,11 @@ export function ApplianceConfigSheet({
     setError(null);
     const payload = {
       templateId: template.id,
+      label: label.trim() || template.name,
       options,
       usageProfileId,
-      quantity: hasQuantityAttribute ? undefined : quantity,
+      quantity,
+      ...(usageProfileId === null ? { hoursPerDay: customHours, daysPerWeek: customDays } : {}),
       ownership,
       ownerId: ownership === 'PRIVATE' ? ownerId : null,
       roomId,
@@ -131,9 +164,11 @@ export function ApplianceConfigSheet({
         </span>
       }
       subtitle={
-        template.alwaysOn
-          ? 'Cet appareil tourne 24h/24 : il consomme même quand vous dormez.'
-          : 'Répondez à ces quelques questions, on s’occupe du calcul.'
+        template.isCustom
+          ? 'Décrivez votre appareil : donnez-lui un nom et dites à quoi il ressemble.'
+          : alwaysOn
+            ? 'Cet appareil tourne 24h/24 : il consomme même quand vous dormez.'
+            : 'Répondez à ces quelques questions, on s’occupe du calcul.'
       }
       footer={
         <div className="space-y-3">
@@ -145,7 +180,7 @@ export function ApplianceConfigSheet({
               </button>
             ) : null}
             <button onClick={save} disabled={saving} className="btn-primary flex-1">
-              {saving ? 'Enregistrement...' : existing ? 'Mettre à jour' : "Ajouter à mon inventaire"}
+              {saving ? 'Enregistrement...' : existing ? 'Mettre à jour' : 'Ajouter à mon inventaire'}
             </button>
           </div>
         </div>
@@ -172,8 +207,25 @@ export function ApplianceConfigSheet({
         </div>
       </div>
 
-      {/* --- Caractéristiques ---------------------------------------------- */}
       <div className="space-y-5">
+        {/* --- Nom : libre, pour reconnaître ses appareils d’un coup d’œil -- */}
+        <div>
+          <label className="mb-2 block text-base font-black">
+            ✏️ Comment l’appelez-vous ?
+            {!template.isCustom ? (
+              <span className="ml-1 font-bold text-ink-muted">(facultatif)</span>
+            ) : null}
+          </label>
+          <input
+            value={label}
+            onChange={(event) => setLabel(event.target.value)}
+            placeholder={template.isCustom ? 'Ex : Congélateur de la boutique' : template.name}
+            maxLength={60}
+            className="w-full rounded-2xl border-2 border-transparent bg-white px-4 py-3 text-base font-bold shadow-card outline-none focus:border-teal-500"
+          />
+        </div>
+
+        {/* --- Caractéristiques --------------------------------------------- */}
         {template.attributes.map((attribute) => (
           <fieldset key={attribute.key}>
             <legend className="mb-2 text-base font-black">
@@ -209,12 +261,55 @@ export function ApplianceConfigSheet({
           </fieldset>
         ))}
 
-        {/* --- Duree d’usage ------------------------------------------------ */}
-        {!template.alwaysOn && template.usageProfiles ? (
+        {/* --- Nombre : n’importe lequel ------------------------------------ */}
+        {template.allowQuantity ? (
+          <div className="card px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-base font-black">🔢 Combien en avez-vous ?</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setQuantity((value) => Math.max(1, value - 1))}
+                  className="tap h-10 w-10 shrink-0 rounded-full bg-sand-100 text-xl font-black"
+                  aria-label="Un de moins"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={999}
+                  value={quantity}
+                  onChange={(event) => {
+                    const next = Number(event.target.value.replace(/\D/g, ''));
+                    setQuantity(Number.isFinite(next) && next > 0 ? Math.min(999, next) : 1);
+                  }}
+                  className="w-16 rounded-xl bg-sand-100 px-2 py-2 text-center text-xl font-black tabular-nums outline-none ring-2 ring-transparent focus:ring-teal-500"
+                  aria-label="Nombre d’appareils"
+                />
+                <button
+                  onClick={() => setQuantity((value) => Math.min(999, value + 1))}
+                  className="tap h-10 w-10 shrink-0 rounded-full bg-sand-100 text-xl font-black"
+                  aria-label="Un de plus"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+            <p className="mt-2 text-xs font-bold text-ink-muted">
+              Vous pouvez saisir n’importe quel nombre en touchant le chiffre.
+            </p>
+          </div>
+        ) : null}
+
+        {/* --- Fréquence : profils rapides, ou réglage libre ---------------- */}
+        {!alwaysOn && profiles.length > 0 ? (
           <fieldset>
-            <legend className="mb-2 text-base font-black">⏱️ Vous l’utilisez combien de temps ?</legend>
+            <legend className="mb-2 text-base font-black">
+              ⏱️ Vous l’utilisez combien de temps ?
+            </legend>
             <div className="space-y-2">
-              {template.usageProfiles.map((profile) => {
+              {profiles.map((profile) => {
                 const selected = usageProfileId === profile.id;
                 return (
                   <button
@@ -237,30 +332,65 @@ export function ApplianceConfigSheet({
                   </button>
                 );
               })}
-            </div>
-          </fieldset>
-        ) : null}
 
-        {/* --- Quantité ------------------------------------------------------ */}
-        {template.allowQuantity && !hasQuantityAttribute ? (
-          <div className="card flex items-center justify-between px-4 py-3">
-            <span className="text-base font-black">🔢 Combien en avez-vous ?</span>
-            <div className="flex items-center gap-3">
               <button
-                onClick={() => setQuantity((value) => Math.max(1, value - 1))}
-                className="tap h-10 w-10 rounded-full bg-sand-100 text-xl font-black"
+                onClick={() => setUsageProfileId(null)}
+                className={`tap flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition ${
+                  usageProfileId === null
+                    ? 'border-teal-500 bg-teal-500/10'
+                    : 'border-transparent bg-white shadow-card'
+                }`}
               >
-                −
-              </button>
-              <span className="w-6 text-center text-xl font-black tabular-nums">{quantity}</span>
-              <button
-                onClick={() => setQuantity((value) => Math.min(20, value + 1))}
-                className="tap h-10 w-10 rounded-full bg-sand-100 text-xl font-black"
-              >
-                +
+                <span className="text-xl">🎚️</span>
+                <span className="flex-1">
+                  <span className="block text-sm font-extrabold">Aucun ne correspond</span>
+                  <span className="block text-xs font-bold text-ink-muted">
+                    Je règle moi-même la durée et les jours
+                  </span>
+                </span>
+                {usageProfileId === null ? <span className="text-teal-600">✓</span> : null}
               </button>
             </div>
-          </div>
+
+            {usageProfileId === null ? (
+              <div className="card mt-2 space-y-4 px-4 py-4">
+                <div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-black">Combien de temps par jour ?</span>
+                    <span className="text-sm font-black tabular-nums text-teal-600">
+                      {fmtDuration(Math.round(customHours * 60))}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.25}
+                    max={24}
+                    step={0.25}
+                    value={customHours}
+                    onChange={(event) => setCustomHours(Number(event.target.value))}
+                    className="mt-1 w-full accent-teal-500"
+                    aria-label="Durée par jour"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-black">Combien de jours ?</span>
+                    <span className="text-sm font-black text-teal-600">{daysLabel(customDays)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={DAY_STEPS.length - 1}
+                    step={1}
+                    value={Math.max(0, DAY_STEPS.indexOf(customDays))}
+                    onChange={(event) => setCustomDays(DAY_STEPS[Number(event.target.value)] ?? 7)}
+                    className="mt-1 w-full accent-teal-500"
+                    aria-label="Jours par semaine"
+                  />
+                </div>
+              </div>
+            ) : null}
+          </fieldset>
         ) : null}
 
         {/* --- Qui paie ? ---------------------------------------------------- */}

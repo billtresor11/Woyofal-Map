@@ -2,87 +2,90 @@ import type { TariffPlan } from './types.js';
 
 /**
  * ---------------------------------------------------------------------------
- * GRILLES TARIFAIRES SENELEC
+ * GRILLES TARIFAIRES SENELEC — WOYOFAL (compteur prépayé)
  * ---------------------------------------------------------------------------
- * IMPORTANT : ces valeurs sont des valeurs par défaut, issues des grilles
- * domestiques publiees par la Senelec / la CRSE. Elles évoluent (revisions
- * tarifaires, compensations de l'Etat). Elles sont donc :
- *   1. versionnées ici (source + date d'effet),
- *   2. copiees en base de données au seed (table TariffPlan / TariffTier),
- *   3. modifiables par l'utilisateur depuis l'écran "Réglages > Mon tarif".
+ * Prix fournis par le client, exprimés TOUTES TAXES COMPRISES : le total obtenu
+ * en sortie des tranches EST la facture mensuelle. Aucune TVA ni redevance
+ * n'est ajoutée par-dessus — c'est le point qui faussait la version précédente.
  *
- * L'application ne depend jamais des chiffres eux-mêmes : seul l'algorithme
- * de tranches ci-dessous (billing.ts) fait foi. Changer un prix = 1 UPDATE.
+ * Les tranches se remettent à zéro à chaque cycle mensuel, sur le cumul de kWh
+ * consommés par le foyer.
  *
- * Rappel Woyofal (prépayé) : les tranches se remettent a zéro chaque mois
- * calendaire, sur le cumul de kWh achetes. En postpayé, la facture est
- * bimestrielle : les seuils s'appliquent au cumul des deux mois.
+ * Ces valeurs restent modifiables depuis l'application (Réglages ▸ Le prix du
+ * kWh) et en base de données : l'algorithme, lui, ne dépend d'aucun chiffre.
  */
 
 export const DEFAULT_TARIFF_CODE = 'WOYOFAL_DPP';
 
+/** Prix TTC du kWh, par tranche et par grille. */
+const PRICES = {
+  WOYOFAL_DPP: [82.0, 136.49, 159.36],
+  WOYOFAL_DMP: [111.23, 143.54, 158.46],
+} as const;
+
+function tiers(prices: readonly [number, number, number] | readonly number[]) {
+  return [
+    {
+      order: 1,
+      fromKwh: 0,
+      toKwh: 150,
+      pricePerKwh: prices[0]!,
+      label: 'Tranche 1',
+      vatExempt: true,
+    },
+    {
+      order: 2,
+      fromKwh: 150,
+      toKwh: 250,
+      pricePerKwh: prices[1]!,
+      label: 'Tranche 2',
+      vatExempt: true,
+    },
+    {
+      order: 3,
+      fromKwh: 250,
+      toKwh: null,
+      pricePerKwh: prices[2]!,
+      label: 'Tranche 3',
+      vatExempt: true,
+    },
+  ];
+}
+
 export const TARIFF_PLANS: TariffPlan[] = [
   {
     code: 'WOYOFAL_DPP',
-    label: 'Woyofal - Petite Puissance',
+    label: 'Woyofal — Petite Puissance',
     description:
-      "Compteur prépayé (recharge par code). Le cas le plus courant : maison ou appartement de 1 à 9 kVA.",
+      'Le cas le plus courant : une maison ou un appartement, compteur prépayé de 1 à 9 kVA.',
     meterType: 'PREPAID',
     periodMonths: 1,
     minKva: 1,
     maxKva: 9,
     currency: 'FCFA',
-    vatRate: 0.18,
+    // Les prix sont déjà TTC : aucune taxe n'est ajoutée par le moteur.
+    vatRate: 0,
     municipalTaxRate: 0,
     fixedFeePerMonth: 0,
-    source: 'Grille domestique petite puissance (DPP) - valeurs indicatives a confirmer sur votre reçu Woyofal',
-    effectiveFrom: '2024-01-01',
-    tiers: [
-      { order: 1, fromKwh: 0, toKwh: 150, pricePerKwh: 91.17, label: 'Tranche 1 (sociale)', vatExempt: true },
-      { order: 2, fromKwh: 150, toKwh: 250, pricePerKwh: 101.44, label: 'Tranche 2', vatExempt: false },
-      { order: 3, fromKwh: 250, toKwh: null, pricePerKwh: 116.35, label: 'Tranche 3', vatExempt: false },
-    ],
+    source: 'Grille domestique petite puissance (DPP), prix TTC fournis par le client',
+    effectiveFrom: '2026-01-01',
+    tiers: tiers(PRICES.WOYOFAL_DPP),
   },
   {
     code: 'WOYOFAL_DMP',
-    label: 'Woyofal - Moyenne Puissance',
-    description: 'Compteur prépayé pour les grandes maisons ou villas (10 kVA et plus).',
+    label: 'Woyofal — Moyenne Puissance',
+    description: 'Les grandes maisons et les villas : compteur prépayé de 10 kVA et plus.',
     meterType: 'PREPAID',
     periodMonths: 1,
     minKva: 10,
     maxKva: null,
     currency: 'FCFA',
-    vatRate: 0.18,
+    vatRate: 0,
     municipalTaxRate: 0,
     fixedFeePerMonth: 0,
-    source: 'Grille domestique moyenne puissance (DMP) - valeurs indicatives a confirmer sur votre reçu Woyofal',
-    effectiveFrom: '2024-01-01',
-    tiers: [
-      { order: 1, fromKwh: 0, toKwh: 150, pricePerKwh: 111.68, label: 'Tranche 1', vatExempt: false },
-      { order: 2, fromKwh: 150, toKwh: 250, pricePerKwh: 122.84, label: 'Tranche 2', vatExempt: false },
-      { order: 3, fromKwh: 250, toKwh: null, pricePerKwh: 132.46, label: 'Tranche 3', vatExempt: false },
-    ],
-  },
-  {
-    code: 'POSTPAID_DPP',
-    label: 'Facture papier - Petite Puissance',
-    description:
-      'Compteur classique avec facture Senelec tous les 2 mois. Les tranches sont calculées sur le total des 2 mois.',
-    meterType: 'POSTPAID',
-    periodMonths: 2,
-    minKva: 1,
-    maxKva: 9,
-    currency: 'FCFA',
-    vatRate: 0.18,
-    municipalTaxRate: 0,
-    fixedFeePerMonth: 500,
-    source: 'Grille domestique petite puissance (DPP), facturation bimestrielle - valeurs indicatives',
-    effectiveFrom: '2024-01-01',
-    tiers: [
-      { order: 1, fromKwh: 0, toKwh: 150, pricePerKwh: 91.17, label: 'Tranche 1 (sociale)', vatExempt: true },
-      { order: 2, fromKwh: 150, toKwh: 250, pricePerKwh: 101.44, label: 'Tranche 2', vatExempt: false },
-      { order: 3, fromKwh: 250, toKwh: null, pricePerKwh: 116.35, label: 'Tranche 3', vatExempt: false },
-    ],
+    source: 'Grille domestique moyenne puissance (DMP), prix TTC fournis par le client',
+    effectiveFrom: '2026-01-01',
+    tiers: tiers(PRICES.WOYOFAL_DMP),
   },
 ];
 

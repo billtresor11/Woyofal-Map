@@ -23,7 +23,7 @@ export function AppliancePicker({
   open: boolean;
   catalog: Catalog | null;
   onClose: () => void;
-  onPick: (template: ApplianceTemplate) => void;
+  onPick: (template: ApplianceTemplate, suggestedName?: string) => void;
 }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
@@ -46,6 +46,8 @@ export function AppliancePicker({
       return normalize([template.name, ...template.keywords].join(' ')).includes(q);
     });
   }, [catalog, query, category]);
+
+  const custom = catalog?.templates.find((item) => item.isCustom);
 
   const colorOf = (template: ApplianceTemplate) =>
     catalog?.categories.find((item) => item.id === template.category)?.color ?? '#0D9488';
@@ -88,16 +90,31 @@ export function AppliancePicker({
       </div>
 
       {templates.length === 0 ? (
-        <p className="py-10 text-center text-sm font-bold text-ink-muted">
-          Aucun appareil ne correspond à "{query}".
-        </p>
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <span className="text-4xl">🔍</span>
+          <p className="text-sm font-bold text-ink-muted">
+            Aucun appareil ne correspond à « {query} ».
+          </p>
+          {custom ? (
+            <button onClick={() => onPick(custom, query.trim())} className="btn-primary">
+              ➕ Ajouter « {query.trim()} » quand même
+            </button>
+          ) : null}
+          <p className="max-w-xs text-xs font-bold text-ink-muted">
+            Vous décrirez son usage en le comparant à un appareil que vous connaissez.
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-3 gap-3 pb-4">
           {templates.map((template) => (
             <button
               key={template.id}
               onClick={() => onPick(template)}
-              className="tap card flex animate-pop flex-col items-center gap-2 px-2 py-4"
+              className={`tap flex animate-pop flex-col items-center gap-2 rounded-3xl px-2 py-4 ${
+                template.isCustom
+                  ? 'border-2 border-dashed border-teal-500/60 bg-teal-500/5'
+                  : 'card'
+              }`}
             >
               <span
                 className="flex h-14 w-14 items-center justify-center rounded-2xl"

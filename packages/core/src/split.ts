@@ -10,19 +10,21 @@ import type {
 
 /**
  * ---------------------------------------------------------------------------
- * REPARTITION DE LA FACTURE (colocation / famille)
+ * RÉPARTITION DE LA FACTURE (colocation / famille)
  * ---------------------------------------------------------------------------
- * Regle de justice retenue, volontairement simple a expliquer a table :
+ * La règle, volontairement simple à expliquer autour d'une table :
  *
- *  1. Un appareil PRIVE (le PC d’une chambre, une clim de chambre) est
- *     entièrement a la charge de son propriétaire.
- *  2. Un appareil COMMUN (frigo, télé du salon, pompe à eau) est partage
- *     au prorata de la PRESENCE de chacun dans le mois. Celui qui part deux
- *     semaines en voyage paie deux fois moins les charges communes.
- *  3. Les kWh sont convertis en FCFA au PRIX MOYEN du foyer, pas au prix
- *     marginal. Sinon le dernier a consommer paierait la tranche 3 pour tout
- *     le monde : injuste et incomprehensible.
- *  4. La redevance fixe eventuelle est partagée a parts egales.
+ *     Part d'un occupant  =  (coût mensuel des appareils COMMUNS / nombre d'occupants)
+ *                          +  coût mensuel de SES appareils personnels
+ *                          +  coût de SES sessions ponctuelles du mois
+ *
+ * Deux précisions qui évitent les disputes :
+ *
+ *  - La facture du foyer est d'abord calculée EN ENTIER, tranches comprises.
+ *    Les kWh de chacun sont ensuite valorisés au PRIX MOYEN du foyer. Sinon le
+ *    dernier à consommer porterait à lui seul toute la tranche 3, ce qui serait
+ *    injuste et incompréhensible.
+ *  - La somme des parts est donc toujours égale à la facture, au franc près.
  */
 
 function round(value: number, decimals = 2): number {
@@ -37,9 +39,9 @@ export interface SplitInput {
   punctualUsages?: PunctualUsageInput[];
   plan: TariffPlan;
   /**
-   * Consommation réelle du mois si elle est connue (releve compteur ou somme
-   * des recharges Woyofal). Elle remplace l’estimation pour la répartition,
-   * les parts de chacun restant calculées sur l’inventaire.
+   * Consommation réelle du mois si elle est connue (relevé compteur ou somme
+   * des recharges Woyofal). Elle remplace l'estimation, les parts de chacun
+   * restant calculées à partir de l'inventaire.
    */
   actualKwh?: number;
 }
@@ -47,82 +49,58 @@ export interface SplitInput {
 export function splitHousehold(input: SplitInput): HouseholdSplit {
   const { members, appliances, plan } = input;
   const punctualUsages = input.punctualUsages ?? [];
+  const occupants = members.length;
 
   const byMember = new Map<string, { shared: number; private: number; punctual: number }>();
   for (const member of members) {
     byMember.set(member.id, { shared: 0, private: 0, punctual: 0 });
   }
+
+  let commonKwh = 0;
   let unassignedKwh = 0;
 
-  // Poids de partage des charges communes : la présence de chacun.
-  const weights = new Map<string, number>();
-  let totalWeight = 0;
-  for (const member of members) {
-    const weight = Math.max(0, member.presenceRatio ?? 1);
-    weights.set(member.id, weight);
-    totalWeight += weight;
-  }
-  if (totalWeight === 0 && members.length > 0) {
-    for (const member of members) weights.set(member.id, 1);
-    totalWeight = members.length;
-  }
-
-  const estimatedKwh = appliances.reduce((sum, a) => sum + a.consumption.kwhPerMonth, 0);
-  const punctualKwh = punctualUsages.reduce((sum, u) => sum + u.kwh, 0);
-  const inventoryKwh = estimatedKwh + punctualKwh;
-
+  // 1. Séparer les appareils communs des appareils personnels.
   for (const appliance of appliances) {
     const kwh = appliance.consumption.kwhPerMonth;
     const owner = appliance.ownerId ? byMember.get(appliance.ownerId) : undefined;
 
     if (appliance.ownership === 'PRIVATE' && owner) {
       owner.private += kwh;
-      continue;
-    }
-
-    // Appareil commun (ou privé sans propriétaire identifié).
-    if (members.length === 0 || totalWeight === 0) {
-      unassignedKwh += kwh;
-      continue;
-    }
-
-    // Pondération explicite par membre si elle est fournie, sinon la présence.
-    const shares = appliance.shares;
-    if (shares && Object.keys(shares).length > 0) {
-      const sum = Object.values(shares).reduce((a, b) => a + b, 0);
-      if (sum > 0) {
-        for (const [memberId, share] of Object.entries(shares)) {
-          const bucket = byMember.get(memberId);
-          if (bucket) bucket.shared += (kwh * share) / sum;
-        }
-        continue;
-      }
-    }
-
-    for (const member of members) {
-      const bucket = byMember.get(member.id);
-      if (bucket) bucket.shared += (kwh * (weights.get(member.id) ?? 0)) / totalWeight;
+    } else {
+      // Commun, ou personnel sans propriétaire identifié : c'est du commun.
+      commonKwh += kwh;
     }
   }
 
+  // 2. Les sessions ponctuelles suivent la même logique.
   for (const usage of punctualUsages) {
     const bucket = usage.memberId ? byMember.get(usage.memberId) : undefined;
     if (bucket) bucket.punctual += usage.kwh;
-    else if (members.length > 0 && totalWeight > 0) {
-      for (const member of members) {
-        const b = byMember.get(member.id);
-        if (b) b.shared += (usage.kwh * (weights.get(member.id) ?? 0)) / totalWeight;
-      }
-    } else unassignedKwh += usage.kwh;
+    else commonKwh += usage.kwh;
   }
 
-  // Facture du foyer : c’est elle qui donne le prix moyen du kWh.
+  // 3. Le commun se divise à parts égales entre les occupants.
+  if (occupants > 0) {
+    const sharePerMember = commonKwh / occupants;
+    for (const member of members) {
+      const bucket = byMember.get(member.id);
+      if (bucket) bucket.shared = sharePerMember;
+    }
+  } else {
+    unassignedKwh = commonKwh;
+  }
+
+  const inventoryKwh =
+    appliances.reduce((sum, a) => sum + a.consumption.kwhPerMonth, 0) +
+    punctualUsages.reduce((sum, u) => sum + u.kwh, 0);
+
+  // 4. La facture du foyer, tranches comprises, donne le prix moyen du kWh.
   const totalKwh = input.actualKwh ?? inventoryKwh;
   const bill = computeMonthlyBill(totalKwh, plan);
   const energyAmount = bill.totalTTC - bill.fixedFee;
-  const fixedPerMember = members.length > 0 ? bill.fixedFee / members.length : 0;
+  const fixedPerMember = occupants > 0 ? bill.fixedFee / occupants : 0;
 
-  // Si un releve réel est fourni, on met les parts a l’échelle de la réalité.
+  // Si un relevé réel est fourni, on met les parts à l'échelle de la réalité.
   const scale = inventoryKwh > 0 ? totalKwh / inventoryKwh : 0;
 
   const memberSplits: MemberSplit[] = members.map((member) => {

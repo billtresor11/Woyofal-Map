@@ -278,7 +278,6 @@ export async function buildSplit(householdId: string, month = currentMonth()) {
     name: member.name,
     emoji: member.emoji,
     color: member.color,
-    presenceRatio: member.presenceRatio,
   }));
 
   const actualKwh = topUps._sum.kwh && topUps._sum.kwh > 0 ? topUps._sum.kwh : undefined;

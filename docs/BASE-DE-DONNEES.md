@@ -38,9 +38,10 @@ déclenche l'alerte « vous allez dépasser ».
 
 ### `Member` — les personnes
 
-Nom, avatar, couleur, et surtout **`presenceRatio`** (0 à 1) : la part du mois pendant
-laquelle la personne était là. Un colocataire parti deux semaines paie moitié moins les
-charges communes. C'est le curseur affiché sous chaque profil dans l'onglet 3.
+Nom, avatar et couleur. Les appareils communs sont divisés à parts égales entre les
+occupants ; chacun paie en plus ses propres appareils. La colonne `presenceRatio` est
+conservée pour un raffinement futur (pondérer selon le temps de présence) mais
+n'intervient pas dans la règle actuelle.
 
 ### `Room` — les pièces
 

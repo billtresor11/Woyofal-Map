@@ -1,5 +1,6 @@
 import {
   APPLIANCE_TEMPLATES,
+  DAYS_PER_MONTH,
   CATEGORIES,
   DEFAULT_TARIFF_CODE,
   computeConsumption,
@@ -36,7 +37,9 @@ const updateTariffSchema = z.object({
 const previewSchema = z.object({
   options: z.record(z.string()).default({}),
   usageProfileId: z.string().optional(),
-  quantity: z.number().int().min(1).max(50).optional(),
+  quantity: z.number().int().min(1).max(999).optional(),
+  hoursPerDay: z.number().min(0).max(24).optional(),
+  daysPerWeek: z.number().min(0).max(7).optional(),
   householdId: z.string().optional(),
   tariffCode: z.string().optional(),
 });
@@ -77,6 +80,8 @@ export async function catalogRoutes(app: FastifyInstance) {
       options: body.options,
       usageProfileId: body.usageProfileId,
       quantity: body.quantity,
+      hoursPerDay: body.hoursPerDay,
+      daysPerWeek: body.daysPerWeek,
     });
 
     let baseKwh = 0;
@@ -93,7 +98,7 @@ export async function catalogRoutes(app: FastifyInstance) {
     return {
       consumption,
       monthlyAmount: bill.totalTTC,
-      dailyAmount: Math.round(bill.totalTTC / 30.4375),
+      dailyAmount: Math.round(bill.totalTTC / DAYS_PER_MONTH),
       yearlyAmount: bill.totalTTC * 12,
       tierLabel: bill.currentTier.label,
       pricePerKwh: bill.averagePricePerKwh,
