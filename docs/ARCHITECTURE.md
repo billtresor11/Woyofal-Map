@@ -149,21 +149,12 @@ L'application est pensée pour un téléphone d'entrée de gamme sur un réseau 
 
 ---
 
-## 6. Le tunnel d'accueil
+## 6. L'écran d'accueil
 
-Personne n'arrive dans un tableau de bord vide. Quatre étapes animées, une question à
-la fois (`apps/web/src/screens/Onboarding.tsx`) :
-
-1. **Ma maison** — son nom et le type de compteur Woyofal (petite ou moyenne puissance).
-2. **Qui habite ici** — les prénoms ; avatars et couleurs sont attribués automatiquement.
-3. **Mes appareils** — une grille d'illustrations ; chaque appareil est affecté d'un
-   geste à un occupant ou marqué « commun ».
-4. **C'est prêt** — la facture estimée s'affiche en montant progressif, puis on entre
-   dans l'application.
-
-Tout est créé à la fin, en une seule fois : le foyer, ses occupants, puis ses appareils.
-Les animations sont des keyframes Tailwind (`step-in`, `rise`, `float`, `check-pop`,
-`halo`) et respectent `prefers-reduced-motion`.
+Un seul écran, quatre questions courtes (`apps/web/src/screens/Onboarding.tsx`) : le nom
+de la maison, le compteur Woyofal (petite ou moyenne puissance), les personnes du foyer
+et un budget mensuel facultatif. Le foyer et ses occupants sont créés en une fois, puis
+l'utilisateur arrive directement sur l'inventaire, qu'il remplit à son rythme.
 
 ## 7. Ce que je ferais ensuite (par ordre de valeur)
 
