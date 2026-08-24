@@ -6,7 +6,7 @@ import { ApplianceConfigSheet } from '../components/ApplianceConfigSheet.js';
 import { CostHeader } from '../components/CostHeader.js';
 import { EmptyState } from '../components/ui.js';
 import { useApp } from '../hooks/useApp.js';
-import { fcfa, kwh as fmtKwh } from '../lib/format.js';
+import { fcfa, initial, kwh as fmtKwh } from '../lib/format.js';
 
 /**
  * ONGLET 1 - Inventaire visuel.
@@ -188,7 +188,19 @@ function ApplianceRow({
   onClick: () => void;
 }) {
   const { summary } = useApp();
-  const owner = summary?.members.find((member) => member.id === appliance.ownerId);
+  const members = summary?.members ?? [];
+
+  /**
+   * Qui porte cet appareil sur sa part de facture ?
+   * Un appareil personnel n'a qu'un propriétaire ; un appareil commun est porté
+   * par les personnes désignées, ou par tout le foyer si rien n'a été restreint.
+   */
+  const sharers =
+    appliance.ownership === 'PRIVATE'
+      ? members.filter((member) => member.id === appliance.ownerId)
+      : appliance.shares.length > 0
+        ? members.filter((member) => appliance.shares.some((s) => s.memberId === member.id))
+        : members;
 
   return (
     <button onClick={onClick} className="tap card flex w-full items-center gap-3 px-4 py-3 text-left">
@@ -206,13 +218,40 @@ function ApplianceRow({
           <span>
             {fmtKwh(appliance.consumption.kwhPerDay)}/jour · {fmtKwh(appliance.consumption.kwhPerMonth)}/mois
           </span>
-          {owner ? (
-            <span className="chip bg-sand-100 px-2 py-0 text-[11px]">
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: owner.color }}
-              />
-              {owner.name}
+          {sharers.length > 0 ? (
+            <span
+              className="flex items-center gap-1"
+              title={
+                appliance.ownership === 'PRIVATE'
+                  ? `Appareil personnel de ${sharers[0]?.name}`
+                  : `Partagé entre ${sharers.map((member) => member.name).join(', ')}`
+              }
+            >
+              {sharers.length === 1 ? (
+                <span className="chip bg-sand-100 px-2 py-0 text-[11px]">
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: sharers[0]!.color }}
+                  />
+                  {sharers[0]!.name}
+                </span>
+              ) : (
+                <>
+                  {sharers.slice(0, 5).map((member) => (
+                    <span
+                      key={member.id}
+                      className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-black text-white"
+                      style={{ backgroundColor: member.color }}
+                    >
+                      {initial(member.name)}
+                    </span>
+                  ))}
+                  {sharers.length > 5 ? <span>+{sharers.length - 5}</span> : null}
+                  <span className="text-[11px]">
+                    {sharers.length === members.length ? 'tout le monde' : 'partagé'}
+                  </span>
+                </>
+              )}
             </span>
           ) : null}
         </span>
