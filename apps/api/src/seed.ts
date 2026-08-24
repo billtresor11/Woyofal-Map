@@ -1,79 +1,11 @@
 import { APPLIANCE_TEMPLATES, TARIFF_PLANS, computeConsumption, defaultSelection } from '@woyofal/core';
 import { prisma } from './db.js';
+import { syncApplianceTemplates, syncTariffPlans } from './services/catalog.sync.js';
 
 /**
  * Seed : recopie le catalogue et les grilles tarifaires du moteur vers la base,
  * puis créé un foyer de démonstration pour que l’application ne soit jamais vide.
  */
-async function seedTariffs() {
-  for (const plan of TARIFF_PLANS) {
-    await prisma.tariffPlan.upsert({
-      where: { code: plan.code },
-      create: {
-        code: plan.code,
-        label: plan.label,
-        description: plan.description,
-        meterType: plan.meterType,
-        periodMonths: plan.periodMonths,
-        minKva: plan.minKva,
-        maxKva: plan.maxKva,
-        vatRate: plan.vatRate,
-        municipalTaxRate: plan.municipalTaxRate,
-        fixedFeePerMonth: plan.fixedFeePerMonth,
-        source: plan.source,
-        effectiveFrom: plan.effectiveFrom,
-        tiers: {
-          create: plan.tiers.map((tier) => ({
-            position: tier.order,
-            fromKwh: tier.fromKwh,
-            toKwh: tier.toKwh,
-            pricePerKwh: tier.pricePerKwh,
-            label: tier.label,
-            vatExempt: tier.vatExempt,
-          })),
-        },
-      },
-      update: {
-        label: plan.label,
-        description: plan.description,
-        vatRate: plan.vatRate,
-        municipalTaxRate: plan.municipalTaxRate,
-        fixedFeePerMonth: plan.fixedFeePerMonth,
-        source: plan.source,
-        effectiveFrom: plan.effectiveFrom,
-      },
-    });
-  }
-  console.log(`  grilles tarifaires : ${TARIFF_PLANS.length}`);
-}
-
-async function seedTemplates() {
-  for (const template of APPLIANCE_TEMPLATES) {
-    const data = {
-      name: template.name,
-      category: template.category,
-      emoji: template.emoji,
-      alwaysOn: template.alwaysOn,
-      basePowerWatts: template.basePowerWatts,
-      dutyCycle: template.dutyCycle,
-      definition: JSON.stringify({
-        keywords: template.keywords,
-        attributes: template.attributes,
-        usageProfiles: template.usageProfiles ?? [],
-        defaultUsageProfileId: template.defaultUsageProfileId,
-        allowQuantity: template.allowQuantity,
-        tips: template.tips,
-      }),
-    };
-    await prisma.applianceTemplate.upsert({
-      where: { id: template.id },
-      create: { id: template.id, ...data },
-      update: data,
-    });
-  }
-  console.log(`  appareils du catalogue : ${APPLIANCE_TEMPLATES.length}`);
-}
-
 async function seedDemoHousehold() {
   const existing = await prisma.household.findFirst({ where: { name: 'Maison Démo (Dakar)' } });
   if (existing) {
@@ -177,8 +109,8 @@ async function seedDemoHousehold() {
 
 async function main() {
   console.log('Seed Woyofal Map...');
-  await seedTariffs();
-  await seedTemplates();
+  console.log(`  grilles tarifaires : ${await syncTariffPlans()}`);
+  console.log(`  appareils du catalogue : ${await syncApplianceTemplates()}`);
   await seedDemoHousehold();
   console.log('Terminé.');
 }

@@ -1,15 +1,22 @@
 import {
   computeConsumption,
+  computeCumulativeKwh,
   computeMonthlyBill,
   findTemplate,
+  forecastCredit,
+  keyFact,
+  projectMonthEnd,
   rankAppliances,
+  rechargeAdvice,
   splitHousehold,
   sumConsumption,
   tierProgress,
+  waterBuckets,
   DAYS_PER_MONTH,
   type ApplianceInput,
   type ApplianceSelection,
   type ConsumptionResult,
+  type CumulativeResult,
   type MemberInput,
 } from '@woyofal/core';
 import { authEnabled } from '../auth/google.js';
@@ -179,26 +186,66 @@ export function assertOwner(
 }
 
 /**
- * kWh déjà consommés dans le mois. On prend le releve réel (recharges Woyofal)
- * s’il existe, sinon on prorate l’estimation sur les jours ecoules : c’est cette
- * valeur qui determine la tranche courante, donc le prix marginal du kWh.
+ * Reconstitue le cumul de kWh du mois a partir de ce qu'on sait de plus sûr :
+ * les relevés du boîtier mural. La ou il n'y a pas de releve, on estime — et le
+ * resultat le dit, plutôt que de faire passer une estimation pour une mesure.
+ *
+ * C'est ce cumul qui determine la tranche courante, donc le prix du kWh suivant.
  */
 export async function consumedSoFar(
   householdId: string,
   month: string,
   estimatedKwhPerDay: number,
-): Promise<{ kwh: number; source: 'recharges' | 'estimation' }> {
-  const { start, end, daysElapsed } = monthRange(month);
+): Promise<CumulativeResult> {
+  const { start, end } = monthRange(month);
+  const [readings, topUps] = await Promise.all([
+    prisma.meterReading.findMany({
+      where: { householdId, readAt: { lt: end } },
+      orderBy: { readAt: 'asc' },
+    }),
+    prisma.topUp.findMany({
+      where: { householdId, purchasedAt: { gte: start, lt: end } },
+      orderBy: { purchasedAt: 'asc' },
+    }),
+  ]);
+
+  return computeCumulativeKwh({
+    monthStart: start,
+    monthEnd: end,
+    readings: readings.map((reading) => ({
+      id: reading.id,
+      remainingKwh: reading.remainingKwh,
+      readAt: reading.readAt,
+    })),
+    topUps: topUps.map((topUp) => ({
+      id: topUp.id,
+      kwh: topUp.kwh,
+      purchasedAt: topUp.purchasedAt,
+    })),
+    estimatedKwhPerDay,
+  });
+}
+
+/**
+ * kWh ACHETÉS depuis le 1er du mois.
+ *
+ * En prépayé, c'est ce cumul-la — et non la consommation — qui fixe la tranche
+ * appliquée a la prochaine recharge. Un foyer qui n'enregistre pas ses achats
+ * n'a rien a comparer : on retombe alors sur sa consommation, en le signalant.
+ */
+export async function purchasedSoFar(
+  householdId: string,
+  month: string,
+  fallbackKwh: number,
+): Promise<{ kwh: number; source: 'achats' | 'estimation' }> {
+  const { start, end } = monthRange(month);
   const topUps = await prisma.topUp.aggregate({
     where: { householdId, purchasedAt: { gte: start, lt: end } },
     _sum: { kwh: true },
   });
-  const real = topUps._sum.kwh ?? 0;
-  if (real > 0) return { kwh: Math.round(real * 100) / 100, source: 'recharges' };
-  return {
-    kwh: Math.round(estimatedKwhPerDay * daysElapsed * 100) / 100,
-    source: 'estimation',
-  };
+  const achete = topUps._sum.kwh ?? 0;
+  if (achete > 0) return { kwh: Math.round(achete * 100) / 100, source: 'achats' };
+  return { kwh: Math.round(fallbackKwh * 100) / 100, source: 'estimation' };
 }
 
 // --- Le tableau de bord ------------------------------------------------------
@@ -217,6 +264,7 @@ export async function buildSummary(
   const gauge = tierProgress(totals.kwhPerMonth, plan);
   const ranking = rankAppliances(applianceInputs, plan);
   const soFar = await consumedSoFar(householdId, month, totals.kwhPerDay);
+  const { daysElapsed, days } = monthRange(month);
 
   const alwaysOnBill = computeMonthlyBill(totals.alwaysOnKwhPerMonth, plan, {
     includeFixedFee: false,
@@ -271,7 +319,29 @@ export async function buildSummary(
       amountPerMonth: Math.max(0, bill.totalTTC - bill.fixedFee - alwaysOnAmount),
       appliances: ranking.filter((item) => !item.alwaysOn),
     },
-    consumedSoFar: soFar,
+    /**
+     * Ou en est le foyer dans son mois : le cumul (mesuré la ou c'est possible),
+     * le credit restant, la projection de fin de mois. C'est ce bloc qui rend
+     * l'onglet Compteur et le conseil de recharge honnêtes.
+     */
+    consumedSoFar: {
+      kwh: soFar.kwh,
+      source: soFar.source,
+      measuredRatio: soFar.measuredRatio,
+      driftKwh: soFar.driftKwh,
+      driftPercent: soFar.driftPercent,
+      remainingKwh: soFar.remainingKwh,
+      lastReadingAt: soFar.lastReadingAt,
+      segments: soFar.segments,
+      projectedMonthKwh: projectMonthEnd(soFar.kwh, totals.kwhPerDay, daysElapsed, days),
+      daysElapsed,
+      daysInMonth: days,
+    },
+    credit:
+      soFar.remainingKwh === null ? null : forecastCredit(soFar.remainingKwh, totals.kwhPerDay),
+    /** Les trois seaux de l'École Woyofal, remplis a hauteur du mois en cours. */
+    buckets: waterBuckets(totals.kwhPerMonth, plan),
+    keyFact: keyFact(totals.kwhPerMonth, plan),
     budget,
     dailyAmount:
       totals.kwhPerMonth > 0 ? Math.round((bill.totalTTC - bill.fixedFee) / DAYS_PER_MONTH) : 0,
@@ -337,4 +407,99 @@ export async function buildSplit(
       occurredAt: session.occurredAt,
     })),
   };
+}
+
+// --- Smart Recharge ----------------------------------------------------------
+
+/**
+ * Le conseil d'achat du foyer.
+ *
+ * Deux cumuls cohabitent, et les confondre fausserait tout :
+ *   - ce qui a été CONSOMMÉ (relevés + estimation) dit quand il faut racheter ;
+ *   - ce qui a été ACHETÉ depuis le 1er dit a quel prix sera le prochain kWh.
+ */
+export async function buildRechargeAdvice(
+  householdId: string,
+  month = currentMonth(),
+  user?: SessionUser | null,
+) {
+  const household = await getHouseholdOrThrow(householdId, user);
+  const plan = await loadPlan(household.tariffCode);
+
+  const totals = sumConsumption(household.appliances.map(rowToApplianceInput).map((a) => a.consumption));
+  const cumul = await consumedSoFar(householdId, month, totals.kwhPerDay);
+  const achats = await purchasedSoFar(householdId, month, cumul.kwh);
+
+  const advice = rechargeAdvice({
+    plan,
+    purchasedKwhThisMonth: achats.kwh,
+    remainingKwh: cumul.remainingKwh,
+    estimatedKwhPerDay: totals.kwhPerDay,
+  });
+
+  return {
+    ...advice,
+    month,
+    /** D'ou vient le cumul d'achats : mesuré, ou déduit faute de mieux. */
+    purchaseSource: achats.source,
+    consumedKwh: cumul.kwh,
+    consumedSource: cumul.source,
+    estimatedKwhPerDay: totals.kwhPerDay,
+    plan,
+  };
+}
+
+// --- Relevés du compteur -----------------------------------------------------
+
+/**
+ * Enregistre un releve du boîtier mural et calcule, si possible, ce qui a été
+ * consomme depuis le releve precedent — la seule mesure vraie de l'application.
+ */
+export async function recordReading(
+  householdId: string,
+  input: { remainingKwh: number; note?: string | null; readAt?: Date },
+  user?: SessionUser | null,
+) {
+  const household = await getHouseholdOrThrow(householdId, user);
+  const readAt = input.readAt ?? new Date();
+
+  const precedent = await prisma.meterReading.findFirst({
+    where: { householdId: household.id, readAt: { lt: readAt } },
+    orderBy: { readAt: 'desc' },
+  });
+
+  let consumedKwh: number | null = null;
+  if (precedent) {
+    const recharges = await prisma.topUp.aggregate({
+      where: { householdId: household.id, purchasedAt: { gte: precedent.readAt, lte: readAt } },
+      _sum: { kwh: true },
+    });
+    const consomme = precedent.remainingKwh + (recharges._sum.kwh ?? 0) - input.remainingKwh;
+    // Un consomme negatif signale une recharge non enregistrée : on ne stocke
+    // pas un chiffre faux, on laisse le champ vide.
+    consumedKwh = consomme >= 0 ? Math.round(consomme * 100) / 100 : null;
+  }
+
+  return prisma.meterReading.create({
+    data: {
+      householdId: household.id,
+      remainingKwh: input.remainingKwh,
+      consumedKwh,
+      note: input.note ?? null,
+      readAt,
+    },
+  });
+}
+
+export async function listReadings(
+  householdId: string,
+  user?: SessionUser | null,
+  limit = 30,
+) {
+  const household = await getHouseholdOrThrow(householdId, user);
+  return prisma.meterReading.findMany({
+    where: { householdId: household.id },
+    orderBy: { readAt: 'desc' },
+    take: limit,
+  });
 }

@@ -1,3 +1,4 @@
+import { balanceAllocation, planAllocation, type AllocationGroup } from '@woyofal/core';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client.js';
 import type { Appliance, ApplianceTemplate, Member, PreviewResult, Room } from '../api/types.js';
@@ -57,7 +58,16 @@ export function ApplianceConfigSheet({
   const [customHours, setCustomHours] = useState(3);
   const [customDays, setCustomDays] = useState(7);
   const [quantity, setQuantity] = useState(1);
-  const [ownership, setOwnership] = useState<'SHARED' | 'PRIVATE'>('SHARED');
+  /**
+   * Trois façons d'attribuer un appareil :
+   *   SHARED  — commun, divisé entre les personnes cochées ;
+   *   PRIVATE — à la charge d'une seule personne ;
+   *   SPLIT   — un LOT ventilé (« 9 ampoules : 4 communes, 2 à Awa, 3 à Moussa »).
+   * SPLIT n'existe qu'à la création : ventiler un lot crée plusieurs lignes.
+   */
+  const [ownership, setOwnership] = useState<'SHARED' | 'PRIVATE' | 'SPLIT'>('SHARED');
+  /** Ventilation du lot : { memberId | '__commun__' : quantité }. */
+  const [parts, setParts] = useState<Record<string, number>>({});
   const [ownerId, setOwnerId] = useState<string | null>(null);
   /** Personnes qui partagent l'appareil commun ; toutes par défaut. */
   const [sharedWith, setSharedWith] = useState<string[]>([]);
@@ -82,6 +92,7 @@ export function ApplianceConfigSheet({
     setCustomDays(existing?.consumption.daysPerWeek ?? 7);
 
     setOwnership(existing?.ownership ?? 'SHARED');
+    setParts({});
     setOwnerId(existing?.ownerId ?? null);
     const stored = existing?.shares?.map((share) => share.memberId) ?? [];
     setSharedWith(stored.length > 0 ? stored : members.map((member) => member.id));
@@ -118,10 +129,51 @@ export function ApplianceConfigSheet({
   const alwaysOn = preview?.consumption.alwaysOn ?? template.alwaysOn;
   const profiles = template.usageProfiles ?? [];
 
+  /**
+   * « J'ai 9 ampoules » n'a pas de sens si on ne dit pas à qui elles sont.
+   * On ne propose la ventilation que quand elle change quelque chose : un lot,
+   * plusieurs personnes, et un appareil qu'on est en train de créer.
+   */
+  const peutVentiler = !existing && quantity > 1 && members.length > 1;
+
+  /** La ventilation courante, sous la forme attendue par le moteur. */
+  function groupesVentiles(): AllocationGroup[] {
+    return Object.entries(parts)
+      .filter(([, quantite]) => quantite > 0)
+      .map(([cle, quantite]) => ({
+        memberId: cle === '__commun__' ? null : cle,
+        quantity: quantite,
+      }));
+  }
+
   async function save() {
     if (!template) return;
     setSaving(true);
     setError(null);
+
+    // Un lot ventilé n'est pas un appareil : c'est plusieurs appareils d'un coup.
+    if (ownership === 'SPLIT') {
+      try {
+        await api.post(`/api/households/${householdId}/appliances/bulk`, {
+          templateId: template.id,
+          label: label.trim() || template.name,
+          options,
+          usageProfileId,
+          ...(usageProfileId === null ? { hoursPerDay: customHours, daysPerWeek: customDays } : {}),
+          roomId,
+          total: quantity,
+          groups: groupesVentiles(),
+        });
+        onSaved();
+        onClose();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Enregistrement impossible.');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const payload = {
       templateId: template.id,
       label: label.trim() || template.name,
@@ -129,7 +181,7 @@ export function ApplianceConfigSheet({
       usageProfileId,
       quantity,
       ...(usageProfileId === null ? { hoursPerDay: customHours, daysPerWeek: customDays } : {}),
-      ownership,
+      ownership: ownership === 'PRIVATE' ? 'PRIVATE' : 'SHARED',
       ownerId: ownership === 'PRIVATE' ? ownerId : null,
       // Liste transmise seulement si tout le foyer n'est pas concerné.
       shares:
@@ -423,9 +475,21 @@ export function ApplianceConfigSheet({
               options={[
                 { value: 'SHARED', label: 'Tout le monde' },
                 { value: 'PRIVATE', label: 'Une personne' },
+                // Ventiler n'a de sens que sur un lot, à la création.
+                ...(peutVentiler
+                  ? [{ value: 'SPLIT' as const, label: 'À répartir' }]
+                  : []),
               ]}
             />
-            {ownership === 'PRIVATE' ? (
+            {ownership === 'SPLIT' ? (
+              <Ventilation
+                total={quantity}
+                parts={parts}
+                setParts={setParts}
+                members={members}
+                nom={label.trim() || template.name}
+              />
+            ) : ownership === 'PRIVATE' ? (
               <div className="mt-3 flex flex-wrap gap-2">
                 {members.map((member) => (
                   <button
@@ -531,5 +595,128 @@ export function ApplianceConfigSheet({
         ) : null}
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * VENTILATION D'UN LOT.
+ *
+ * Un compteur par personne, plus une ligne « commun ». Le total restant est
+ * affiché en permanence : personne ne doit avoir à faire la soustraction de
+ * tête. Ce qu'on n'attribue pas finit au pot commun, automatiquement.
+ */
+function Ventilation({
+  total,
+  parts,
+  setParts,
+  members,
+  nom,
+}: {
+  total: number;
+  parts: Record<string, number>;
+  setParts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  members: Member[];
+  nom: string;
+}) {
+  const groupes: AllocationGroup[] = Object.entries(parts)
+    .filter(([, quantite]) => quantite > 0)
+    .map(([cle, quantite]) => ({
+      memberId: cle === '__commun__' ? null : cle,
+      quantity: quantite,
+    }));
+  const bilan = planAllocation(total, groupes);
+  const equilibre = balanceAllocation(total, groupes);
+  const communAuto = equilibre.find((groupe) => groupe.memberId === null)?.quantity ?? 0;
+
+  function ajuster(cle: string, delta: number) {
+    setParts((prev) => {
+      const actuel = prev[cle] ?? 0;
+      const suivant = Math.max(0, Math.min(total, actuel + delta));
+      const copie = { ...prev };
+      if (suivant === 0) delete copie[cle];
+      else copie[cle] = suivant;
+      return copie;
+    });
+  }
+
+  const lignes = [
+    { cle: '__commun__', nom: 'En commun', couleur: '#8A817C', aide: 'Salon, cour, couloir…' },
+    ...members.map((membre) => ({
+      cle: membre.id,
+      nom: membre.name,
+      couleur: membre.color,
+      aide: 'Sa chambre, ses affaires',
+    })),
+  ];
+
+  return (
+    <div className="mt-3">
+      <p className="mb-2 text-xs font-bold text-ink-muted">
+        Vos {total} {nom.toLowerCase()}, ce n’est sûrement pas tout au même endroit. Dites qui
+        utilise quoi : chacun ne paiera que ce qui le concerne.
+      </p>
+
+      <div className="space-y-2">
+        {lignes.map((ligne) => {
+          const valeur =
+            ligne.cle === '__commun__' && parts.__commun__ === undefined
+              ? communAuto
+              : (parts[ligne.cle] ?? 0);
+          const automatique = ligne.cle === '__commun__' && parts.__commun__ === undefined;
+          return (
+            <div
+              key={ligne.cle}
+              className="flex items-center gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-card"
+            >
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: ligne.couleur }}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold">{ligne.nom}</span>
+                <span className="block text-[11px] font-bold text-ink-muted">
+                  {automatique && valeur > 0 ? 'Le reste, automatiquement' : ligne.aide}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1.5">
+                <button
+                  onClick={() => ajuster(ligne.cle, -1)}
+                  className="tap h-9 w-9 rounded-full bg-sand-100 text-lg font-black text-ink-soft"
+                  aria-label={`Moins pour ${ligne.nom}`}
+                >
+                  −
+                </button>
+                <span
+                  className={`w-7 text-center text-lg font-black tabular-nums ${
+                    automatique ? 'text-ink-muted' : ''
+                  }`}
+                >
+                  {valeur}
+                </span>
+                <button
+                  onClick={() => ajuster(ligne.cle, 1)}
+                  className="tap h-9 w-9 rounded-full bg-sand-100 text-lg font-black text-ink-soft"
+                  aria-label={`Plus pour ${ligne.nom}`}
+                >
+                  +
+                </button>
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <p
+        className={`mt-2 rounded-xl px-3 py-2 text-xs font-extrabold ${
+          bilan.remaining < 0 ? 'bg-tier3/15 text-tier3' : 'bg-sand-100 text-ink-soft'
+        }`}
+      >
+        {bilan.remaining < 0
+          ? bilan.message
+          : bilan.remaining > 0
+            ? `${bilan.remaining} ira${bilan.remaining > 1 ? 'ont' : ''} au commun.`
+            : `Les ${total} sont répartis.`}
+      </p>
+    </div>
   );
 }

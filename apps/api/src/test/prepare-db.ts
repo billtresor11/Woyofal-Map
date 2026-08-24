@@ -16,4 +16,12 @@ export async function setup() {
     env: { ...process.env, DATABASE_URL: TEST_DB },
     stdio: 'ignore',
   });
+
+  // Sans le miroir du catalogue, toute création d'appareil viole une clé
+  // étrangère. Les tests doivent partir d'une base aussi complète qu'en vrai.
+  process.env.DATABASE_URL = TEST_DB;
+  const { syncCatalog } = await import('../services/catalog.sync.js');
+  const { prisma } = await import('../db.js');
+  await syncCatalog();
+  await prisma.$disconnect();
 }

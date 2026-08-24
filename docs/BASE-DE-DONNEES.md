@@ -19,7 +19,8 @@ Household (le foyer, rattaché à un compteur)
 ├── Appliance       les appareils possédés, avec les choix de l'utilisateur
 │   └── ApplianceShare   pondération fine d'un appareil commun, par personne
 ├── PunctualSession les utilisations ponctuelles enregistrées (« 3 h de console »)
-└── TopUp           les recharges Woyofal réelles
+├── TopUp           les recharges Woyofal réelles
+└── MeterReading    les relevés du boîtier mural — la seule donnée MESURÉE
 
 ApplianceTemplate   le catalogue (miroir de packages/core/src/catalog.ts)
 TariffPlan ──┬── TariffTier    les grilles Senelec, versionnées et modifiables
@@ -90,6 +91,32 @@ s'ajoutent à sa part du mois.
 Montant payé, kWh reçus, date. **C'est le pont entre l'estimation et la réalité** : dès
 qu'un foyer saisit ses recharges, la répartition s'appuie sur des kWh réels et non plus
 sur une estimation.
+
+### `MeterReading` — le relevé du compteur
+
+La seule donnée **mesurée** de toute l'application : le nombre de kWh affiché sur
+le boîtier mural, recopié par l'utilisateur.
+
+| Colonne | Rôle |
+|---|---|
+| `remainingKwh` | Le crédit restant, tel qu'affiché sur l'écran du compteur |
+| `consumedKwh` | Ce qui a été consommé depuis le relevé précédent, reconstitué à l'enregistrement — `null` si incalculable |
+| `readAt` | Le moment du relevé (l'utilisateur peut le dater) |
+
+`consumedKwh` n'est pas une estimation mais une conservation :
+
+```
+consommé = crédit_précédent + recharges_entre_les_deux − crédit_actuel
+```
+
+Quand le crédit remonte sans recharge enregistrée — une recharge oubliée —, le
+résultat serait négatif : la colonne reste alors **vide** plutôt que de stocker
+un chiffre faux. Le moteur retombe sur l'estimation pour cette période, et le
+dit à l'utilisateur.
+
+Voir `docs/MOTEUR-TARIFAIRE.md` pour l'algorithme complet.
+
+---
 
 ### `TariffPlan` et `TariffTier` — les grilles Senelec
 

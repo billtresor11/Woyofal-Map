@@ -13,6 +13,8 @@ import { authRoutes } from './routes/auth.routes.js';
 import { prisma } from './db.js';
 import { AppError } from './errors.js';
 import { applianceRoutes } from './routes/appliance.routes.js';
+import { syncCatalog } from './services/catalog.sync.js';
+import { meterRoutes } from './routes/meter.routes.js';
 import { catalogRoutes } from './routes/catalog.routes.js';
 import { estimateRoutes } from './routes/estimate.routes.js';
 import { householdRoutes } from './routes/household.routes.js';
@@ -63,6 +65,7 @@ export async function buildServer(options: { verifyGoogle?: GoogleVerifier } = {
   await app.register(catalogRoutes);
   await app.register(householdRoutes);
   await app.register(applianceRoutes);
+  await app.register(meterRoutes);
   await app.register(estimateRoutes);
 
   // En production, l’API sert aussi le front compile : un seul conteneur a déployer.
@@ -85,7 +88,16 @@ const isMain = process.argv[1] && import.meta.url === `file://${path.resolve(pro
 if (isMain) {
   const port = Number(process.env.PORT ?? 4000);
   const host = process.env.HOST ?? '0.0.0.0';
-  buildServer()
+  /**
+   * Le catalogue est recopié en base a chaque démarrage.
+   *
+   * `Appliance.templateId` porte une clé étrangère vers ce miroir : sur une base
+   * neuve ou après une mise a jour du catalogue, l'oublier fait échouer tout
+   * ajout d'appareil. Le faire ici rend le déploiement infaillible — c'est
+   * idempotent, et ça coûte quelques dizaines de millisecondes.
+   */
+  syncCatalog()
+    .then(() => buildServer())
     .then((app) => app.listen({ port, host }))
     .then(() => {
       // Message volontairement écrit pour quelqu'un qui n'est pas developpeur.

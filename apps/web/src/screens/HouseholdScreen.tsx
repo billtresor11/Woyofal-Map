@@ -36,7 +36,7 @@ export function HouseholdScreen() {
   if (!summary) return null;
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-28 lg:min-h-0 lg:pb-6">
       <header className="bg-white px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
         <h1 className="text-2xl font-black leading-tight">Chez nous</h1>
         <p className="mt-0.5 text-sm font-bold text-ink-soft">

@@ -52,9 +52,33 @@ export function clearSessionCookie(reply: FastifyReply): void {
   reply.clearCookie(SESSION_COOKIE, { path: '/' });
 }
 
-/** Lit la session du cookie, sans exiger qu'elle existe. */
+/**
+ * Où trouver le jeton de session.
+ *
+ * Deux clients, deux mécanismes :
+ *   - le NAVIGATEUR reçoit un cookie `httpOnly`, que son JavaScript ne peut pas
+ *     lire — c'est ce qui protège la session d'une injection de script ;
+ *   - l'application MOBILE n'a pas de cookie : elle garde le jeton dans le
+ *     trousseau sécurisé du téléphone et le présente dans `Authorization`.
+ *
+ * Le cookie est lu en premier : sur le web, il fait toujours autorité, et un
+ * en-tête forgé ne doit jamais pouvoir passer devant lui.
+ */
+function extraireJeton(request: FastifyRequest): string | null {
+  const cookie = request.cookies[SESSION_COOKIE];
+  if (cookie) return cookie;
+
+  const entete = request.headers.authorization;
+  if (entete && entete.startsWith('Bearer ')) {
+    const jeton = entete.slice(7).trim();
+    if (jeton) return jeton;
+  }
+  return null;
+}
+
+/** Lit la session, sans exiger qu'elle existe. */
 export async function currentUser(request: FastifyRequest): Promise<SessionUser | null> {
-  const token = request.cookies[SESSION_COOKIE];
+  const token = extraireJeton(request);
   if (!token) return null;
   try {
     const payload = request.server.jwt.verify<{ sub: string }>(token);

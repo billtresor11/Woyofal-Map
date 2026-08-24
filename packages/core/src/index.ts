@@ -5,3 +5,7 @@ export * from './consumption.js';
 export * from './catalog.js';
 export * from './split.js';
 export * from './insights.js';
+export * from './calibration.js';
+export * from './recharge.js';
+export * from './education.js';
+export * from './allocation.js';

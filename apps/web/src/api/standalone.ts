@@ -2,18 +2,26 @@ import {
   APPLIANCE_TEMPLATES,
   CATEGORIES,
   TARIFF_PLANS,
+  balanceAllocation,
   computeConsumption,
+  computeCumulativeKwh,
   computeMonthlyBill,
   computePunctualKwh,
   defaultSelection,
   estimatePunctual,
   findTemplate,
+  forecastCredit,
+  keyFact,
   kwhForAmount,
   marginalCost,
+  planAllocation,
+  projectMonthEnd,
   rankAppliances,
+  rechargeAdvice,
   splitHousehold,
   sumConsumption,
   tierProgress,
+  waterBuckets,
   DAYS_PER_MONTH,
   type ApplianceInput,
   type ConsumptionResult,
@@ -84,12 +92,23 @@ interface DbTopUp {
   kwh: number;
   purchasedAt: string;
 }
+/** Un relevé du boîtier mural, en mode autonome comme côté serveur. */
+interface DbReading {
+  id: string;
+  householdId: string;
+  remainingKwh: number;
+  consumedKwh: number | null;
+  note: string | null;
+  readAt: string;
+  createdAt: string;
+}
 interface Db {
   households: DbHousehold[];
   members: DbMember[];
   appliances: DbAppliance[];
   sessions: DbSession[];
   topUps: DbTopUp[];
+  readings: DbReading[];
   tariffs: Record<string, TariffPlan>;
 }
 
@@ -100,7 +119,15 @@ function newId(): string {
 }
 
 function emptyDb(): Db {
-  return { households: [], members: [], appliances: [], sessions: [], topUps: [], tariffs: {} };
+  return {
+    households: [],
+    members: [],
+    appliances: [],
+    sessions: [],
+    topUps: [],
+    readings: [],
+    tariffs: {},
+  };
 }
 
 function read(): Db {
@@ -144,6 +171,10 @@ class NotFound extends Error {
   status = 404;
 }
 
+class BadRequest extends Error {
+  status = 400;
+}
+
 function household(id: string): DbHousehold {
   const found = db().households.find((h) => h.id === id);
   if (!found) throw new NotFound('Ce foyer est introuvable.');
@@ -185,13 +216,134 @@ function serializeAppliance(row: DbAppliance) {
   };
 }
 
+function monthBounds(month: string): { start: Date; end: Date } {
+  const [year, part] = month.split('-').map(Number);
+  return { start: new Date(year!, part! - 1, 1), end: new Date(year!, part!, 1) };
+}
+
+/**
+ * Le cumul du mois, calculé par le MÊME moteur que le serveur.
+ * Le mode autonome ne réimplémente jamais un calcul : il ne fait que fournir
+ * les données. C'est la seule façon d'être sûr que les deux versions disent
+ * le même prix.
+ */
 function consumedSoFar(householdId: string, month: string, kwhPerDay: number) {
+  const { start, end } = monthBounds(month);
+  return computeCumulativeKwh({
+    monthStart: start,
+    monthEnd: end,
+    readings: (db().readings ?? [])
+      .filter((r) => r.householdId === householdId)
+      .map((r) => ({ id: r.id, remainingKwh: r.remainingKwh, readAt: new Date(r.readAt) })),
+    topUps: db()
+      .topUps.filter((t) => t.householdId === householdId)
+      .map((t) => ({ id: t.id, kwh: t.kwh, purchasedAt: new Date(t.purchasedAt) })),
+    estimatedKwhPerDay: kwhPerDay,
+  });
+}
+
+/** kWh achetés depuis le 1er : c'est eux qui fixent la tranche à l'achat. */
+function purchasedSoFar(householdId: string, month: string, fallbackKwh: number) {
   const total = db()
     .topUps.filter((t) => t.householdId === householdId && t.purchasedAt.startsWith(month))
     .reduce((sum, t) => sum + t.kwh, 0);
-  if (total > 0) return { kwh: Math.round(total * 100) / 100, source: 'recharges' as const };
-  const day = new Date().getDate();
-  return { kwh: Math.round(kwhPerDay * day * 100) / 100, source: 'estimation' as const };
+  return total > 0
+    ? { kwh: Math.round(total * 100) / 100, source: 'achats' as const }
+    : { kwh: Math.round(fallbackKwh * 100) / 100, source: 'estimation' as const };
+}
+
+function buildRechargeAdvice(householdId: string, month = currentMonth()) {
+  const home = household(householdId);
+  const tariff = plan(home.tariffCode);
+  const totals = sumConsumption(
+    db()
+      .appliances.filter((a) => a.householdId === householdId)
+      .map(toApplianceInput)
+      .map((a) => a.consumption),
+  );
+  const cumul = consumedSoFar(householdId, month, totals.kwhPerDay);
+  const achats = purchasedSoFar(householdId, month, cumul.kwh);
+
+  return {
+    ...rechargeAdvice({
+      plan: tariff,
+      purchasedKwhThisMonth: achats.kwh,
+      remainingKwh: cumul.remainingKwh,
+      estimatedKwhPerDay: totals.kwhPerDay,
+    }),
+    month,
+    purchaseSource: achats.source,
+    consumedKwh: cumul.kwh,
+    consumedSource: cumul.source,
+    estimatedKwhPerDay: totals.kwhPerDay,
+    plan: tariff,
+  };
+}
+
+/** Enregistre un relevé et reconstitue le consommé depuis le précédent. */
+function addReading(householdId: string, payload: Record<string, unknown>): DbReading {
+  household(householdId);
+  const remainingKwh = Number(payload.remainingKwh);
+  const readAt = payload.readAt ? new Date(String(payload.readAt)) : new Date();
+
+  const precedent = (db().readings ?? [])
+    .filter((r) => r.householdId === householdId && new Date(r.readAt) < readAt)
+    .sort((a, b) => new Date(b.readAt).getTime() - new Date(a.readAt).getTime())[0];
+
+  let consumedKwh: number | null = null;
+  if (precedent) {
+    const recharges = db()
+      .topUps.filter((t) => {
+        const date = new Date(t.purchasedAt);
+        return t.householdId === householdId && date >= new Date(precedent.readAt) && date <= readAt;
+      })
+      .reduce((sum, t) => sum + t.kwh, 0);
+    const consomme = precedent.remainingKwh + recharges - remainingKwh;
+    consumedKwh = consomme >= 0 ? Math.round(consomme * 100) / 100 : null;
+  }
+
+  const reading: DbReading = {
+    id: newId(),
+    householdId,
+    remainingKwh,
+    consumedKwh,
+    note: payload.note ? String(payload.note) : null,
+    readAt: readAt.toISOString(),
+    createdAt: new Date().toISOString(),
+  };
+  db().readings.push(reading);
+  save();
+  return reading;
+}
+
+/** Ajout en masse ventilé : une ligne par groupe, comme côté serveur. */
+function addApplianceBulk(householdId: string, payload: Record<string, unknown>) {
+  const total = Number(payload.total);
+  const groupes = balanceAllocation(
+    total,
+    (payload.groups as Array<{ memberId: string | null; quantity: number }>) ?? [],
+  );
+  const verdict = planAllocation(total, groupes);
+  if (!verdict.valid) throw new BadRequest(verdict.message);
+
+  const noms = new Map(
+    db()
+      .members.filter((m) => m.householdId === householdId)
+      .map((m) => [m.id, m.name]),
+  );
+  const template = findTemplate(String(payload.templateId));
+  const base = payload.label ? String(payload.label) : (template?.name ?? 'Appareil');
+
+  const appliances = groupes.map((groupe) =>
+    addAppliance(householdId, {
+      ...payload,
+      label: groupe.memberId ? `${base} de ${noms.get(groupe.memberId) ?? ''}`.trim() : base,
+      quantity: groupe.quantity,
+      ownership: groupe.memberId ? 'PRIVATE' : 'SHARED',
+      ownerId: groupe.memberId,
+    }),
+  );
+  return { appliances, allocation: groupes };
 }
 
 function buildSummary(householdId: string, month = currentMonth()) {
@@ -231,7 +383,27 @@ function buildSummary(householdId: string, month = currentMonth()) {
       amountPerMonth: Math.max(0, energy - alwaysOnAmount),
       appliances: ranking.filter((item) => !item.alwaysOn),
     },
-    consumedSoFar: consumedSoFar(householdId, month, totals.kwhPerDay),
+    consumedSoFar: (() => {
+      const cumul = consumedSoFar(householdId, month, totals.kwhPerDay);
+      const now = new Date();
+      const { start, end } = monthBounds(month);
+      const days = Math.round((end.getTime() - start.getTime()) / 86_400_000);
+      const daysElapsed = now >= end ? days : Math.max(1, now.getDate());
+      return {
+        ...cumul,
+        projectedMonthKwh: projectMonthEnd(cumul.kwh, totals.kwhPerDay, daysElapsed, days),
+        daysElapsed,
+        daysInMonth: days,
+      };
+    })(),
+    credit: (() => {
+      const cumul = consumedSoFar(householdId, month, totals.kwhPerDay);
+      return cumul.remainingKwh === null
+        ? null
+        : forecastCredit(cumul.remainingKwh, totals.kwhPerDay);
+    })(),
+    buckets: waterBuckets(totals.kwhPerMonth, tariff),
+    keyFact: keyFact(totals.kwhPerMonth, tariff),
     budget: home.monthlyBudget
       ? {
           target: home.monthlyBudget,
@@ -520,6 +692,25 @@ export async function handleStandalone<T>(
     save();
     return answer(home);
   }
+
+  // --- Compteur et conseil de recharge : les routes ajoutées au serveur ---
+  m = match(/^\/api\/households\/([^/]+)\/readings$/);
+  if (m) {
+    const id = m[1]!;
+    if (method === 'POST') return answer(addReading(id, payload));
+    if (method === 'GET') {
+      const readings = (db().readings ?? [])
+        .filter((r) => r.householdId === id)
+        .sort((a, b) => new Date(b.readAt).getTime() - new Date(a.readAt).getTime());
+      return answer({ readings });
+    }
+  }
+
+  m = match(/^\/api\/households\/([^/]+)\/recharge-advice$/);
+  if (method === 'GET' && m) return answer(buildRechargeAdvice(m[1]!));
+
+  m = match(/^\/api\/households\/([^/]+)\/appliances\/bulk$/);
+  if (method === 'POST' && m) return answer(addApplianceBulk(m[1]!, payload));
 
   m = match(/^\/api\/households\/([^/]+)\/(summary|split|appliances|members|topups)$/);
   if (m) {

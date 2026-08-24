@@ -57,6 +57,7 @@ model Household {
   appliances Appliance[]
   sessions   PunctualSession[]
   topUps     TopUp[]
+  readings   MeterReading[]
 
   @@index([userId])
 }
@@ -196,6 +197,25 @@ model TopUp {
   household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@index([householdId, purchasedAt])
+}
+
+/// Un relevé du crédit affiché sur le boîtier mural Woyofal.
+/// C’est la seule donnée MESURÉE de l’application : elle fait autorité sur
+/// toute estimation, et sert à recaler la tranche en cours.
+model MeterReading {
+  id           String   @id @default(cuid())
+  householdId  String
+  /// kWh restants lus sur l’écran du compteur.
+  remainingKwh Float
+  /// Consommation reconstituée depuis le relevé précédent (kWh), si calculable.
+  consumedKwh  Float?
+  note         String?
+  readAt       DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, readAt])
 }
 
 /// Grille tarifaire Senelec, versionnée et modifiable par l’utilisateur.

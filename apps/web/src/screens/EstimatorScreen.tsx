@@ -28,7 +28,7 @@ const AMOUNTS = [1000, 2000, 5000, 10000, 20000];
 export function EstimatorScreen() {
   const [mode, setMode] = useState<'action' | 'recharge'>('action');
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen pb-28 lg:min-h-0 lg:pb-6">
       <header className="bg-white px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1.25rem)]">
         <h1 className="text-2xl font-black leading-tight">Combien ça coûte ?</h1>
         <p className="mt-0.5 text-sm font-bold text-ink-soft">

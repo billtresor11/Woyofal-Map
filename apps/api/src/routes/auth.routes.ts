@@ -77,6 +77,12 @@ export function authRoutes(verify: GoogleVerifier = verifyGoogleCredential) {
       setSessionCookie(reply, token);
 
       return {
+        /**
+         * Le jeton n'est renvoyé dans le corps que pour l'application mobile,
+         * qui n'a pas de cookie et le rangera dans le trousseau du téléphone.
+         * Le navigateur, lui, l'ignore : il a déjà son cookie `httpOnly`.
+         */
+        token,
         user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
       };
     });

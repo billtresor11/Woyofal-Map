@@ -50,7 +50,7 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
   }
 
   return (
-    <div className="pb-28">
+    <div className="pb-28 lg:pb-0">
       <CostHeader summary={summary} onOpenTariff={onOpenSettings} />
 
       <div className="space-y-6 px-4 pt-5">
@@ -146,10 +146,20 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
         ) : null}
       </div>
 
-      {/* --- Bouton d’ajout, toujours accessible au pouce ------------------- */}
+      {/*
+        Bouton d'ajout. Sur téléphone il flotte au-dessus de la barre d'onglets,
+        à portée de pouce. Sur ordinateur, où il n'y a ni pouce ni barre basse,
+        un bouton flottant se poserait en travers de la liste : il redevient
+        donc un bouton normal, à la fin du contenu.
+      */}
+      <div className="mt-6 hidden justify-center px-4 pb-6 lg:flex">
+        <button onClick={() => setPickerOpen(true)} className="btn-primary px-6">
+          ➕ Ajouter un appareil
+        </button>
+      </div>
       <button
         onClick={() => setPickerOpen(true)}
-        className="btn-primary fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-1/2 z-30 -translate-x-1/2 px-6 shadow-pop"
+        className="btn-primary fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-1/2 z-30 -translate-x-1/2 px-6 shadow-pop lg:hidden"
       >
         ➕ Ajouter un appareil
       </button>

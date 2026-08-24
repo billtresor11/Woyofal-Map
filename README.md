@@ -7,10 +7,17 @@ d'appareils, choisit des caractéristiques en langage courant (« Taille : 200 l
 « Toute la nuit »), et l'application traduit ça en kilowattheures puis en francs, en
 appliquant discrètement les tranches tarifaires de la Senelec.
 
-C'est **une seule application web, dessinée pour le téléphone**. On l'ouvre dans un
-navigateur, et on peut l'ajouter à l'écran d'accueil : elle s'ouvre alors en plein
-écran avec son icône, comme une app installée. Rien à publier sur l'App Store ou le
-Play Store, une seule version à mettre à jour.
+Le produit existe en **deux applications, un seul cerveau** :
+
+- une **application web** dessinée pour le téléphone (barre d'onglets en bas) et
+  qui s'étend en colonne de navigation sur ordinateur, installable sur l'écran
+  d'accueil ;
+- une **application mobile native** (React Native / Expo), pour iOS et Android.
+
+Les deux parlent à la même API et partagent le même moteur de calcul
+(`packages/core`) : **aucune formule n'est écrite deux fois**. C'est ce qui
+garantit qu'une facture partagée entre colocataires donne le même chiffre au
+franc près, quel que soit l'appareil utilisé.
 
 ---
 
@@ -18,9 +25,11 @@ Play Store, une seule version à mettre à jour.
 
 | Onglet | Nom | Ce qu'il résout |
 |---|---|---|
-| 1 | **Mes appareils** | Inventaire visuel. On clique sur un frigo, on dit qu'il fait 200 litres, l'app en déduit la consommation. Les appareils qui tournent **24h/24** sont isolés dans un bloc à part : c'est le socle incompressible de la facture. |
+| 1 | **Mes appareils** | Inventaire visuel. On clique sur un frigo, on dit qu'il fait 200 litres, l'app en déduit la consommation. Les appareils **24h/24** sont isolés : c'est le socle incompressible. Deuxième vue, **Qui paie quoi** : la répartition en colocation (*part de chacun = communs ÷ occupants + ses propres appareils*), avec ventilation d'un lot (« 9 ampoules : 4 communes, 2 pour Awa, 3 pour Moussa »). |
 | 2 | **Combien ça coûte ?** | Estimateur ponctuel : « 3 h de PlayStation ce soir, ça fait combien ? ». La réponse tient compte de la tranche déjà atteinte dans le mois. Deuxième mode : « avec 5 000 F de recharge, je reçois combien de kWh ? ». |
-| 3 | **Chez nous** | Colocation / famille. Séparation des appareils **communs** (frigo, télé du salon) et **personnels** (PC de la chambre, clim d'une chambre). Règle de partage : *part de chacun = coût des communs ÷ nombre d'occupants + coût de ses propres appareils*. |
+| 3 | **Mon compteur** | Le calibrage. On recopie le nombre affiché sur le boîtier mural : ce nombre **écrase l'estimation** et recale la tranche en cours. L'application dit ensuite ce qui est mesuré, ce qui est estimé, et de combien elle se trompait. |
+| 4 | **Quand recharger** | Le conseiller d'achat. En prépayé, la tranche s'applique **à l'achat**, et retombe à zéro le 1er : acheter 20 000 F le 28 coûte bien plus cher que 5 000 F le 28 puis 15 000 F le 2. L'app chiffre l'écart et donne le montant à acheter aujourd'hui. |
+| 5 | **L'École Woyofal** | Trois seaux qu'on remplit dans l'ordre et qu'on vide le 1er du mois. Tous les chiffres viennent de la grille réelle du foyer — aucun exemple écrit à la main ne peut se mettre à mentir. |
 
 ---
 
@@ -68,11 +77,11 @@ automatiquement pour que rien ne soit jamais vide.
 
 | Commande | Effet |
 |---|---|
-| `npm test` | Lance les 32 tests du moteur de calcul (tranches, consommation, répartition). |
-| `npm run typecheck` | Vérifie les types sur les trois paquets. |
+| `npm test` | Lance les 78 tests du moteur et les 26 tests d'API. |
+| `npm run typecheck` | Vérifie les types sur les quatre paquets, mobile compris. |
 | `npm run build` | Compile tout pour la production. |
 | `npm start` | Démarre le serveur de production (il sert aussi l'application web). |
-| `npm run -w @woyofal/api test` | Lance les 7 tests d'authentification (session, propriété des foyers). |
+| `npm run mobile` | Compile le moteur puis lance l'application native (Expo). |
 | `npm run -w @woyofal/api db:studio` | Ouvre une interface graphique pour inspecter la base. |
 
 ---
@@ -88,21 +97,28 @@ woyofal-map/
 │       ├── billing.ts       kWh ➜ FCFA (algorithme des tranches Senelec)
 │       ├── tariffs.ts       les grilles tarifaires, versionnées
 │       ├── split.ts         répartition de la facture en colocation
+│       ├── calibration.ts   les relevés du boîtier mural ➜ cumul réel du mois
+│       ├── recharge.ts      quand acheter, combien, et ce qu'on économise
+│       ├── education.ts     les trois seaux et l'exemple du débordement
+│       ├── allocation.ts    ventilation d'un lot (« 9 ampoules : 4 + 2 + 3 »)
 │       └── insights.ts      mise en forme, équivalents du quotidien
 ├── apps/
 │   ├── api/             @woyofal/api — Fastify + Prisma (SQLite ➜ PostgreSQL)
-│   └── web/             @woyofal/web — React + Vite + Tailwind, pensé mobile
+│   ├── web/             @woyofal/web — React + Vite + Tailwind + Framer Motion
+│   └── mobile/          @woyofal/mobile — React Native + Expo (iOS / Android)
 └── docs/
     ├── ARCHITECTURE.md      les choix techniques et pourquoi
     ├── AUTHENTIFICATION.md  connexion Google, session, clé à créer
     ├── BASE-DE-DONNEES.md   le schéma, table par table
     ├── CALCUL-SENELEC.md    l'algorithme des tranches, avec des exemples chiffrés
+    ├── MOTEUR-TARIFAIRE.md  calibrage, conseil de recharge, les trois seaux
     └── DEPLOIEMENT.md       mise en ligne
 ```
 
-Le moteur `@woyofal/core` est **partagé** entre le serveur et l'application : mêmes
-règles des deux côtés, aucune divergence possible entre ce qui s'affiche et ce qui est
-enregistré.
+Le moteur `@woyofal/core` est **partagé** entre le serveur, l'application web et
+l'application native : mêmes règles partout, aucune divergence possible entre ce qui
+s'affiche et ce qui est enregistré. Une facture partagée entre colocataires ne pardonne
+pas un écart de quelques francs — c'est la raison d'être de ce découpage.
 
 ---
 

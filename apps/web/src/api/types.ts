@@ -1,21 +1,32 @@
 import type {
+  AllocationGroup,
   ApplianceCategory,
   ApplianceTemplate,
   BillResult,
+  Bucket,
   ConsumptionResult,
   CostEquivalent,
+  CreditForecast,
   HouseholdSplit,
+  Lesson,
+  OverflowExample,
   PunctualEstimate,
+  RechargeAdvice,
   TariffPlan,
   TariffTier,
 } from '@woyofal/core';
 
 export type {
+  AllocationGroup,
   ApplianceCategory,
   ApplianceTemplate,
   BillResult,
+  Bucket,
   ConsumptionResult,
   CostEquivalent,
+  CreditForecast,
+  Lesson,
+  OverflowExample,
   TariffPlan,
   TariffTier,
 };
@@ -103,7 +114,31 @@ export interface Summary {
     appliances: ApplianceCost[];
   };
   switchable: { kwhPerMonth: number; amountPerMonth: number; appliances: ApplianceCost[] };
-  consumedSoFar: { kwh: number; source: 'recharges' | 'estimation' };
+  /** Ou en est le foyer dans son mois : mesuré la ou c'est possible, estimé ailleurs. */
+  consumedSoFar: {
+    kwh: number;
+    source: 'compteur' | 'estimation' | 'mixte';
+    measuredRatio: number;
+    driftKwh: number | null;
+    driftPercent: number | null;
+    remainingKwh: number | null;
+    lastReadingAt: string | null;
+    segments: Array<{
+      from: string;
+      to: string;
+      kwh: number;
+      source: 'compteur' | 'estimation';
+      explanation: string;
+    }>;
+    projectedMonthKwh: number;
+    daysElapsed: number;
+    daysInMonth: number;
+  };
+  /** Prévision du crédit restant, quand le compteur a été relevé au moins une fois. */
+  credit: CreditForecast | null;
+  /** Les trois seaux, remplis a hauteur du mois en cours. */
+  buckets: Bucket[];
+  keyFact: string;
   budget: { target: number; projected: number; remaining: number; status: 'ok' | 'warning' | 'over' } | null;
   dailyAmount: number;
   appliances: Appliance[];
@@ -144,4 +179,33 @@ export interface SplitResult extends HouseholdSplit {
     durationMinutes: number;
     occurredAt: string;
   }>;
+}
+
+// --- Compteur et recharge ----------------------------------------------------
+
+export interface MeterReading {
+  id: string;
+  householdId: string;
+  remainingKwh: number;
+  /** Consommation reconstituée depuis le relevé précédent, si calculable. */
+  consumedKwh: number | null;
+  note: string | null;
+  readAt: string;
+  createdAt: string;
+}
+
+export interface RechargeAdviceResult extends Omit<RechargeAdvice, 'resetOn'> {
+  /** Sérialisé en texte par l'API : à reconvertir avec `new Date()` si besoin. */
+  resetOn: string;
+  month: string;
+  purchaseSource: 'achats' | 'estimation';
+  consumedKwh: number;
+  consumedSource: 'compteur' | 'estimation' | 'mixte';
+  estimatedKwhPerDay: number;
+  plan: TariffPlan;
+}
+
+export interface BulkResult {
+  appliances: Appliance[];
+  allocation: AllocationGroup[];
 }

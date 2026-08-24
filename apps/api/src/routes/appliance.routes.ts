@@ -1,9 +1,9 @@
-import { findTemplate } from '@woyofal/core';
+import { balanceAllocation, findTemplate, planAllocation } from '@woyofal/core';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireUser } from '../auth/session.js';
 import { prisma } from '../db.js';
-import { notFound } from '../errors.js';
+import { AppError, notFound } from '../errors.js';
 import {
   assertOwner,
   computeFromSelection,
@@ -28,6 +28,25 @@ const applianceSchema = z.object({
 });
 
 const updateApplianceSchema = applianceSchema.partial().omit({ templateId: true });
+
+/**
+ * Ajout en masse : « j'ai 9 ampoules », puis on dit a qui elles sont.
+ * `groups` ventile le total ; `memberId: null` = commun a tout le foyer.
+ */
+const bulkSchema = applianceSchema
+  .omit({ quantity: true, ownership: true, ownerId: true, shares: true })
+  .extend({
+    total: z.number().int().min(1).max(999),
+    groups: z
+      .array(
+        z.object({
+          memberId: z.string().nullable(),
+          quantity: z.number().int().min(0).max(999),
+        }),
+      )
+      .max(24)
+      .default([]),
+  });
 
 export async function applianceRoutes(app: FastifyInstance) {
   /** Ajouter un appareil : le serveur recalcule toujours la consommation. */
@@ -80,6 +99,73 @@ export async function applianceRoutes(app: FastifyInstance) {
 
     reply.code(201);
     return serializeAppliance(appliance);
+  });
+
+  /**
+   * Ajouter un lot et le ventiler en une seule fois.
+   *
+   * On crée une ligne par groupe plutôt qu'une ligne unique avec des poids :
+   * chaque ligne garde ainsi sa quantité, son propriétaire et son coût propre,
+   * et la répartition de la facture n'a aucun cas particulier a gérer.
+   */
+  app.post('/api/households/:id/appliances/bulk', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = parse(bulkSchema, request.body);
+    await getHouseholdOrThrow(id, await requireUser(request));
+
+    const template = findTemplate(body.templateId);
+    if (!template) throw notFound(`L’appareil "${body.templateId}"`);
+
+    // Ce que personne ne réclame appartient a la maison.
+    const groupes = balanceAllocation(body.total, body.groups);
+    const plan = planAllocation(body.total, groupes);
+    if (!plan.valid) throw new AppError(plan.message);
+
+    const membres = await prisma.member.findMany({ where: { householdId: id } });
+    const nomsParId = new Map(membres.map((membre) => [membre.id, membre.name]));
+    const base = body.label ?? template.name;
+
+    const crees = [];
+    for (const groupe of groupes) {
+      if (groupe.memberId && !nomsParId.has(groupe.memberId)) {
+        throw new AppError('Une des personnes choisies n’existe plus.');
+      }
+
+      const consumption = computeFromSelection({
+        templateId: body.templateId,
+        options: body.options,
+        usageProfileId: body.usageProfileId ?? undefined,
+        quantity: groupe.quantity,
+        hoursPerDay: body.hoursPerDay,
+        daysPerWeek: body.daysPerWeek,
+      });
+
+      const appliance = await prisma.appliance.create({
+        data: {
+          householdId: id,
+          templateId: body.templateId,
+          label: groupe.memberId ? `${base} de ${nomsParId.get(groupe.memberId)}` : base,
+          optionsJson: JSON.stringify(body.options),
+          usageProfileId: body.usageProfileId ?? null,
+          quantity: consumption.quantity,
+          ownership: groupe.memberId ? 'PRIVATE' : 'SHARED',
+          ownerId: groupe.memberId,
+          roomId: body.roomId ?? null,
+          watts: consumption.watts,
+          dutyCycle: consumption.dutyCycle,
+          hoursPerDay: consumption.hoursPerDay,
+          daysPerWeek: consumption.daysPerWeek,
+          alwaysOn: consumption.alwaysOn,
+          kwhPerDay: consumption.kwhPerDay,
+          kwhPerMonth: consumption.kwhPerMonth,
+        },
+        include: { shares: true },
+      });
+      crees.push(serializeAppliance(appliance));
+    }
+
+    reply.code(201);
+    return { appliances: crees, allocation: groupes };
   });
 
   app.patch('/api/appliances/:applianceId', async (request) => {
