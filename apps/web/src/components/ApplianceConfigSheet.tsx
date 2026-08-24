@@ -3,6 +3,7 @@ import { api } from '../api/client.js';
 import type { Appliance, ApplianceTemplate, Member, PreviewResult, Room } from '../api/types.js';
 import { duration as fmtDuration, fcfa, kwh as fmtKwh } from '../lib/format.js';
 import { ApplianceIcon } from './ApplianceIcon.js';
+import { OptionIcon, hasOptionIcon } from './OptionIcon.js';
 import { Segmented, Sheet } from './ui.js';
 
 /**
@@ -244,22 +245,32 @@ export function ApplianceConfigSheet({
             <div className="grid grid-cols-2 gap-2">
               {attribute.options.map((option) => {
                 const selected = (options[attribute.key] ?? attribute.defaultOptionId) === option.id;
+                const illustrated = hasOptionIcon(option.icon);
                 return (
                   <button
                     key={option.id}
                     onClick={() => setOptions((prev) => ({ ...prev, [attribute.key]: option.id }))}
-                    className={`tap rounded-2xl border-2 px-3 py-3 text-left transition ${
+                    className={`tap rounded-2xl border-2 px-3 py-3 transition ${
+                      illustrated ? 'flex flex-col items-center text-center' : 'text-left'
+                    } ${
                       selected
                         ? 'border-teal-500 bg-teal-500/10'
                         : 'border-transparent bg-white shadow-card'
                     }`}
                   >
+                    {illustrated ? (
+                      <span className={`mb-1.5 ${selected ? 'text-teal-600' : 'text-ink-soft'}`}>
+                        <OptionIcon icon={option.icon} className="h-9 w-9" />
+                      </span>
+                    ) : null}
                     <span className="block text-sm font-extrabold leading-tight">
-                      {option.emoji ? <span className="mr-1">{option.emoji}</span> : null}
+                      {!illustrated && option.emoji ? (
+                        <span className="mr-1">{option.emoji}</span>
+                      ) : null}
                       {option.label}
                     </span>
                     {option.hint ? (
-                      <span className="mt-0.5 block text-xs font-bold text-ink-muted">
+                      <span className="mt-0.5 block text-xs font-bold leading-tight text-ink-muted">
                         {option.hint}
                       </span>
                     ) : null}

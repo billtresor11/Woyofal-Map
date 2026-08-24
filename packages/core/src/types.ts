@@ -40,6 +40,11 @@ export interface AttributeOption {
   label: string;
   hint?: string;
   emoji?: string;
+  /**
+   * Clé d'une illustration dédiée (voir OptionIcon côté application).
+   * Reconnaître la forme de son ampoule est plus rapide que lire son nom.
+   */
+  icon?: string;
   watts?: number;
   factor?: number;
   dutyCycle?: number;
