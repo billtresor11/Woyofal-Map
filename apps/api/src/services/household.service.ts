@@ -1,7 +1,6 @@
 import {
   computeConsumption,
   computeMonthlyBill,
-  costEquivalents,
   findTemplate,
   rankAppliances,
   splitHousehold,
@@ -232,7 +231,6 @@ export async function buildSummary(householdId: string, month = currentMonth()) 
     bill,
     gauge,
     ranking,
-    equivalents: costEquivalents(bill.totalTTC),
     alwaysOn: {
       kwhPerMonth: totals.alwaysOnKwhPerMonth,
       amountPerMonth: alwaysOnAmount,

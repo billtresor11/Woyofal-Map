@@ -5,7 +5,6 @@ import {
   computeConsumption,
   computeMonthlyBill,
   computePunctualKwh,
-  costEquivalents,
   defaultSelection,
   estimatePunctual,
   findTemplate,
@@ -219,7 +218,6 @@ function buildSummary(householdId: string, month = currentMonth()) {
     bill,
     gauge: tierProgress(totals.kwhPerMonth, tariff),
     ranking,
-    equivalents: costEquivalents(bill.totalTTC),
     alwaysOn: {
       kwhPerMonth: totals.alwaysOnKwhPerMonth,
       amountPerMonth: alwaysOnAmount,

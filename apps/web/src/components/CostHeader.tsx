@@ -8,7 +8,7 @@ import { fcfa, kwh as fmtKwh, tierColor } from '../lib/format.js';
  * elles se lisent comme un jeu de couleurs.
  */
 export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpenTariff?: () => void }) {
-  const { bill, gauge, totals, equivalents, budget, dailyAmount } = summary;
+  const { bill, gauge, totals, budget, dailyAmount } = summary;
   const tiers = gauge.segments.map((segment) => segment.tier);
   const scale = gauge.scaleKwh;
   const fillRatio = Math.min(1, totals.kwhPerMonth / scale);
@@ -36,15 +36,21 @@ export function CostHeader({ summary, onOpenTariff }: { summary: Summary; onOpen
         </button>
       </div>
 
-      {equivalents.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {equivalents.map((equivalent) => (
-            <span key={equivalent.label} className="chip bg-white/15 text-white">
-              {equivalent.emoji} {equivalent.count} {equivalent.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
+      {/* --- Le besoin en électricité, par catégorie ---------------------- */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <NeedCard
+          emoji="🔁"
+          title="Ça tourne tout seul"
+          perDay={totals.alwaysOnKwhPerDay}
+          perMonth={totals.alwaysOnKwhPerMonth}
+        />
+        <NeedCard
+          emoji="🎚️"
+          title="Vous les allumez"
+          perDay={totals.switchableKwhPerDay}
+          perMonth={totals.switchableKwhPerMonth}
+        />
+      </div>
 
       {/* --- Jauge des tranches ------------------------------------------- */}
       <div className="mt-5">
@@ -141,6 +147,31 @@ function TierBand({
           />
         );
       })}
+    </div>
+  );
+}
+
+/** Besoin en électricité d'une catégorie d'appareils, par jour et par mois. */
+function NeedCard({
+  emoji,
+  title,
+  perDay,
+  perMonth,
+}: {
+  emoji: string;
+  title: string;
+  perDay: number;
+  perMonth: number;
+}) {
+  return (
+    <div className="rounded-2xl bg-white/15 px-3 py-3">
+      <p className="text-xs font-black leading-tight">
+        {emoji} {title}
+      </p>
+      <p className="mt-1 text-lg font-black leading-none tabular-nums">{fmtKwh(perDay)}</p>
+      <p className="text-[11px] font-bold text-white/75">par jour</p>
+      <p className="mt-1 text-sm font-black tabular-nums">{fmtKwh(perMonth)}</p>
+      <p className="text-[11px] font-bold text-white/75">ce mois-ci</p>
     </div>
   );
 }

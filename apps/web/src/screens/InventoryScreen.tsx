@@ -78,9 +78,13 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
                 <p className="text-sm font-bold text-ink-soft">
                   Même quand la maison est vide, 24h/24.
                 </p>
+                <p className="text-sm font-extrabold text-ink-soft">
+                  {fmtKwh(summary.totals.alwaysOnKwhPerDay)} par jour ·{' '}
+                  {fmtKwh(summary.totals.alwaysOnKwhPerMonth)} ce mois-ci
+                </p>
               </div>
-              <div className="text-right">
-                <p className="text-xl font-black leading-none text-mango-600">
+              <div className="shrink-0 text-right">
+                <p className="whitespace-nowrap text-xl font-black leading-none text-mango-600">
                   {fcfa(summary.alwaysOn.amountPerMonth)}
                 </p>
                 <p className="text-xs font-bold text-ink-muted">
@@ -108,9 +112,13 @@ export function InventoryScreen({ onOpenSettings }: { onOpenSettings: () => void
               <div>
                 <h2 className="text-lg font-black leading-tight">🎚️ Vous les allumez</h2>
                 <p className="text-sm font-bold text-ink-soft">Là où vous pouvez agir.</p>
+                <p className="text-sm font-extrabold text-ink-soft">
+                  {fmtKwh(summary.totals.switchableKwhPerDay)} par jour ·{' '}
+                  {fmtKwh(summary.totals.switchableKwhPerMonth)} ce mois-ci
+                </p>
               </div>
-              <div className="text-right">
-                <p className="text-xl font-black leading-none text-teal-600">
+              <div className="shrink-0 text-right">
+                <p className="whitespace-nowrap text-xl font-black leading-none text-teal-600">
                   {fcfa(summary.switchable.amountPerMonth)}
                 </p>
                 <p className="text-xs font-bold text-ink-muted">par mois</p>

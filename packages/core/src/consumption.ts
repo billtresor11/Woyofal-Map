@@ -120,8 +120,10 @@ export interface HouseholdTotals {
   kwhPerDay: number;
   kwhPerMonth: number;
   /** Part des appareils qui tournent 24h/24 (le "socle" du foyer). */
+  alwaysOnKwhPerDay: number;
   alwaysOnKwhPerMonth: number;
   /** Part des appareils que l'on allume et éteint (le levier d'économie). */
+  switchableKwhPerDay: number;
   switchableKwhPerMonth: number;
   alwaysOnSharePercent: number;
   applianceCount: number;
@@ -130,15 +132,17 @@ export interface HouseholdTotals {
 
 export function sumConsumption(items: ConsumptionResult[]): HouseholdTotals {
   const kwhPerDay = items.reduce((sum, item) => sum + item.kwhPerDay, 0);
-  const alwaysOnKwhPerMonth = items
-    .filter((item) => item.alwaysOn)
-    .reduce((sum, item) => sum + item.kwhPerMonth, 0);
   const kwhPerMonth = items.reduce((sum, item) => sum + item.kwhPerMonth, 0);
+  const alwaysOn = items.filter((item) => item.alwaysOn);
+  const alwaysOnKwhPerDay = alwaysOn.reduce((sum, item) => sum + item.kwhPerDay, 0);
+  const alwaysOnKwhPerMonth = alwaysOn.reduce((sum, item) => sum + item.kwhPerMonth, 0);
 
   return {
     kwhPerDay: round(kwhPerDay),
     kwhPerMonth: round(kwhPerMonth),
+    alwaysOnKwhPerDay: round(alwaysOnKwhPerDay),
     alwaysOnKwhPerMonth: round(alwaysOnKwhPerMonth),
+    switchableKwhPerDay: round(kwhPerDay - alwaysOnKwhPerDay),
     switchableKwhPerMonth: round(kwhPerMonth - alwaysOnKwhPerMonth),
     alwaysOnSharePercent: kwhPerMonth > 0 ? Math.round((alwaysOnKwhPerMonth / kwhPerMonth) * 100) : 0,
     applianceCount: items.length,

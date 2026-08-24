@@ -78,7 +78,9 @@ export interface Summary {
   totals: {
     kwhPerDay: number;
     kwhPerMonth: number;
+    alwaysOnKwhPerDay: number;
     alwaysOnKwhPerMonth: number;
+    switchableKwhPerDay: number;
     switchableKwhPerMonth: number;
     alwaysOnSharePercent: number;
     applianceCount: number;
@@ -92,7 +94,6 @@ export interface Summary {
     kwhToNextTier: number | null;
   };
   ranking: ApplianceCost[];
-  equivalents: CostEquivalent[];
   alwaysOn: {
     kwhPerMonth: number;
     amountPerMonth: number;
