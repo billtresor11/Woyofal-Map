@@ -1,0 +1,37 @@
+{
+  "cli": {
+    "version": ">= 5.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "//": "Trois profils, du plus rapide à tester au plus abouti.",
+
+    "development": {
+      "//": "Compilation de développement : permet de recharger le code sans recompiler. Réservé aux développeurs.",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+
+    "preview": {
+      "//": "CELUI À UTILISER pour tester. Produit un fichier .apk qu'on installe directement sur un téléphone Android, sans passer par le Play Store.",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+
+    "production": {
+      "//": "Pour publier sur le Play Store et l'App Store. Produit un .aab (Android) et un .ipa (iOS).",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
