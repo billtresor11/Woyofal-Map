@@ -163,6 +163,33 @@ l'utilisateur arrive directement sur l'inventaire, qu'il remplit à son rythme.
 2. **Notification « vous approchez de la tranche 2 »** : c'est le moment exact où un
    conseil fait économiser de l'argent.
 3. **Historique sur 12 mois** : voir l'effet de la saison (la clim en avril-juin).
-4. **Mode hors ligne complet** (service worker) : l'inventaire se consulte sans réseau.
+4. **Données consultables hors ligne** : la coquille de l'application est déjà mise en
+   cache (service worker, voir plus bas) ; il reste à garder une copie locale du dernier
+   inventaire pour qu'il s'affiche sans réseau.
 5. **Partage WhatsApp de la répartition** : le format naturel de la discussion en
    colocation.
+
+---
+
+## 8. Une seule application, installable sur le téléphone
+
+Il n'y a **pas** d'application mobile séparée : c'est la même application web, dessinée
+d'abord pour un écran de téléphone, qui s'installe sur l'écran d'accueil.
+
+| Pièce | Fichier | Rôle |
+|---|---|---|
+| Manifeste | `apps/web/public/manifest.webmanifest` | Nom, icônes, couleurs, `display: standalone` (plein écran, sans barre d'adresse). |
+| Icônes | `apps/web/public/icone-*.png` | 192 px, 512 px et une version *maskable* pour Android, plus `apple-touch-icon.png` pour iOS. |
+| Service worker | `apps/web/public/service-worker.js` | Met la coquille en cache dès l'installation ; stratégie « le réseau d'abord », donc jamais de vieille version servie à quelqu'un qui a du réseau. Les appels `/api/` ne sont **jamais** mis en cache : une facture périmée serait pire que pas de facture. |
+| Injection | `scripts/inject-precache.mjs` | Après `vite build`, écrit dans le service worker la vraie liste des fichiers compilés (leurs noms portent une empreinte qui change à chaque version). Sans cela, l'application ne serait hors ligne qu'à la seconde visite. |
+
+Deux détails qui coûtent cher quand on les oublie :
+
+- la relecture du cache utilise `{ ignoreVary: true }` — le serveur renvoie
+  `Vary: Origin`, et la copie mise en cache à l'installation n'a pas d'en-tête
+  `Origin` : sans cette option, plus rien n'est retrouvé hors ligne ;
+- le service worker n'est **pas** enregistré dans la version autonome (`__STANDALONE__`),
+  qui est un fichier unique ouvert depuis le disque.
+
+Ce qui marche aujourd'hui sans réseau : l'application s'ouvre et s'affiche. Les données
+du foyer, elles, viennent du serveur — c'est le point 4 de la liste ci-dessus.

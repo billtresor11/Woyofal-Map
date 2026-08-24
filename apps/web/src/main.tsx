@@ -18,6 +18,16 @@ if (STANDALONE) {
   }
 }
 
+// Installation sur l'écran d'accueil et consultation hors ligne.
+// Inutile en mode démonstration : le fichier est déjà entièrement local.
+if (!STANDALONE && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {
+      /* pas de service worker : l'application fonctionne quand même */
+    });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

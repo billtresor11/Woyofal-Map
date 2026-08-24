@@ -107,9 +107,13 @@ docker run -p 4000:4000 \
 
 ## Installation sur le téléphone
 
-L'application est une PWA : dans Chrome ou Safari, *Menu ▸ Ajouter à l'écran
-d'accueil*. Elle s'ouvre en plein écran, comme une application native, et se met
+Il n'y a pas d'application à publier sur les magasins : c'est la même application
+web qui s'installe. Dans Chrome ou Safari, *Menu ▸ Ajouter à l'écran d'accueil*.
+Elle s'ouvre alors en plein écran, sans barre d'adresse, avec son icône, et se met
 à jour toute seule au rechargement.
+
+Sans réseau, l'application s'ouvre quand même (sa coquille est gardée sur le
+téléphone) ; les données du foyer, elles, ont besoin de la connexion.
 
 ---
 

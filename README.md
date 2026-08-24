@@ -7,6 +7,11 @@ d'appareils, choisit des caractéristiques en langage courant (« Taille : 200 l
 « Toute la nuit »), et l'application traduit ça en kilowattheures puis en francs, en
 appliquant discrètement les tranches tarifaires de la Senelec.
 
+C'est **une seule application web, dessinée pour le téléphone**. On l'ouvre dans un
+navigateur, et on peut l'ajouter à l'écran d'accueil : elle s'ouvre alors en plein
+écran avec son icône, comme une app installée. Rien à publier sur l'App Store ou le
+Play Store, une seule version à mettre à jour.
+
 ---
 
 ## Ce que fait l'application
