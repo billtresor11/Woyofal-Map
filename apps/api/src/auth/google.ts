@@ -52,31 +52,42 @@ export function anonymousAllowed(): boolean {
 /**
  * Garde-fou de démarrage.
  *
- * Sans `GOOGLE_CLIENT_ID`, l'application reste OUVERTE : n'importe qui accède à
- * n'importe quel foyer. C'est voulu en développement et pour la démonstration
- * hors ligne, mais ce serait une fuite de données en production.
+ * Sans `GOOGLE_CLIENT_ID`, personne ne peut se connecter. L'application reste
+ * alors fermée — `anonymousAllowed()` vaut faux en production, donc aucune
+ * donnée de foyer n'est accessible — mais elle devient inutilisable.
  *
- * Plutôt que de démarrer discrètement dans ce mode, le serveur refuse de se
- * lancer. Une panne visible au déploiement vaut mieux qu'une application
- * silencieusement sans porte.
+ * Ce cas doit hurler dans les journaux. Il ne doit PAS arrêter le serveur :
+ * un processus mort ne renvoie qu'une page d'erreur de l'hébergeur, illisible
+ * pour l'utilisateur comme pour celui qui déploie. Un serveur debout qui
+ * affiche « la connexion n'est pas configurée » se diagnostique en dix
+ * secondes, et laisse la route de santé répondre à l'hébergeur.
  *
- * Échappatoire explicite pour une démonstration publique assumée :
- * `ALLOW_ANONYMOUS=true`.
+ * Retourne `true` quand tout est en ordre, `false` quand l'application est
+ * démarrée mais verrouillée faute de configuration.
  */
-export function assertAuthConfigured(): void {
-  if (process.env.NODE_ENV !== 'production') return;
-  if (authEnabled()) return;
+export function assertAuthConfigured(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  if (authEnabled()) return true;
+
   if (process.env.ALLOW_ANONYMOUS === 'true') {
-    console.warn(
-      '  ⚠️  ALLOW_ANONYMOUS=true : l’application est accessible SANS connexion.',
-    );
-    return;
+    console.warn('');
+    console.warn('  ⚠️  ALLOW_ANONYMOUS=true : l’application est accessible SANS connexion.');
+    console.warn('');
+    return true;
   }
-  throw new Error(
-    'GOOGLE_CLIENT_ID est obligatoire en production : sans lui, tous les foyers ' +
-      'seraient accessibles sans connexion. Voir DEPLOY.md ▸ variables d’environnement. ' +
-      '(Pour une démonstration publique assumée : ALLOW_ANONYMOUS=true.)',
-  );
+
+  console.error('');
+  console.error('  ⛔  GOOGLE_CLIENT_ID est absent : PERSONNE ne pourra se connecter.');
+  console.error('');
+  console.error('      L’application démarre quand même, mais elle reste verrouillée :');
+  console.error('      aucun foyer n’est accessible sans compte.');
+  console.error('');
+  console.error('      Pour l’ouvrir : ajoutez la variable GOOGLE_CLIENT_ID.');
+  console.error('      Marche à suivre : DEPLOY.md ▸ B4.');
+  console.error('');
+  console.error('      Pour une démonstration publique assumée : ALLOW_ANONYMOUS=true.');
+  console.error('');
+  return false;
 }
 
 let client: OAuth2Client | null = null;

@@ -39,8 +39,17 @@ RUN npm ci \
       --include-workspace-root
 
 COPY . .
-# Le schéma est adapté au type de base indiqué par DATABASE_URL (PostgreSQL en
-# production, fichier local en développement) : plus rien à éditer à la main.
+
+# Le type de base est déduit de DATABASE_URL — or cette variable n'existe pas
+# encore ICI : à la construction, l'hébergeur n'a pas branché la base. Sans
+# valeur, le script retomberait sur « sqlite » et figerait un client incapable
+# de parler à PostgreSQL. On lui donne donc une adresse factice du bon type :
+# une image de production vise PostgreSQL.
+#
+# Le client est de toute façon REGÉNÉRÉ au démarrage, avec la vraie adresse
+# (voir CMD) : cette valeur ne sert qu'à compiler.
+ENV DATABASE_URL="postgresql://construction:construction@localhost:5432/construction"
+
 RUN node scripts/prisma-schema.mjs \
     && npx prisma generate --schema apps/api/prisma/schema.runtime.prisma \
     && npm run build
@@ -69,7 +78,11 @@ COPY --from=build /app/scripts/prisma-schema.mjs ./scripts/prisma-schema.mjs
 
 EXPOSE 4000
 
-# Le schéma est appliqué à la base au démarrage, puis le serveur se lance.
-# `db push` est idempotent : au premier démarrage il crée les tables, ensuite
-# il ne fait rien. Le catalogue, lui, est recopié par le serveur lui-même.
-CMD ["sh", "-c", "node scripts/prisma-schema.mjs && npx prisma db push --schema apps/api/prisma/schema.runtime.prisma --skip-generate --accept-data-loss && node apps/api/dist/server.js"]
+# Démarrage, dans l'ordre :
+#
+#   1. le schéma est adapté à la VRAIE adresse de base, connue seulement ici ;
+#   2. le client Prisma est régénéré en conséquence — c'est ce qui manquait, et
+#      qui faisait échouer le serveur avec « the URL must start with file: » ;
+#   3. les tables sont créées si besoin (`db push` est idempotent) ;
+#   4. le serveur démarre. Le catalogue, lui, se recopie tout seul.
+CMD ["sh", "-c", "node scripts/prisma-schema.mjs && npx prisma generate --schema apps/api/prisma/schema.runtime.prisma && npx prisma db push --schema apps/api/prisma/schema.runtime.prisma --skip-generate --accept-data-loss && node apps/api/dist/server.js"]

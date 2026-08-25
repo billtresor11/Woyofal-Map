@@ -60,29 +60,35 @@ describe('anonymousAllowed', () => {
 });
 
 describe('assertAuthConfigured', () => {
-  it('refuse de démarrer une production sans identifiant Google', () => {
+  it('signale une production sans identifiant Google, SANS arrêter le serveur', () => {
     delete process.env.GOOGLE_CLIENT_ID;
     delete process.env.ALLOW_ANONYMOUS;
     process.env.NODE_ENV = 'production';
-    expect(() => assertAuthConfigured()).toThrowError(/GOOGLE_CLIENT_ID/);
+
+    // Un processus mort ne renvoie qu'une page d'erreur de l'hébergeur : on
+    // veut un serveur debout et verrouillé, pas une panne opaque.
+    expect(() => assertAuthConfigured()).not.toThrow();
+    expect(assertAuthConfigured()).toBe(false);
+    // Et l'application reste bel et bien fermée.
+    expect(anonymousAllowed()).toBe(false);
   });
 
-  it('laisse passer la production correctement configurée', () => {
+  it('valide la production correctement configurée', () => {
     process.env.NODE_ENV = 'production';
     process.env.GOOGLE_CLIENT_ID = 'client.apps.googleusercontent.com';
-    expect(() => assertAuthConfigured()).not.toThrow();
+    expect(assertAuthConfigured()).toBe(true);
   });
 
-  it('laisse passer une démonstration publique explicitement assumée', () => {
+  it('valide une démonstration publique explicitement assumée', () => {
     delete process.env.GOOGLE_CLIENT_ID;
     process.env.NODE_ENV = 'production';
     process.env.ALLOW_ANONYMOUS = 'true';
-    expect(() => assertAuthConfigured()).not.toThrow();
+    expect(assertAuthConfigured()).toBe(true);
   });
 
-  it('ne bloque jamais le développement', () => {
+  it('ne signale rien en développement', () => {
     delete process.env.GOOGLE_CLIENT_ID;
     process.env.NODE_ENV = 'development';
-    expect(() => assertAuthConfigured()).not.toThrow();
+    expect(assertAuthConfigured()).toBe(true);
   });
 });

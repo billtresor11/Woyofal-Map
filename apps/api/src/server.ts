@@ -97,7 +97,8 @@ if (isMain) {
    * ajout d'appareil. Le faire ici rend le déploiement infaillible — c'est
    * idempotent, et ça coûte quelques dizaines de millisecondes.
    */
-  // Refuse de démarrer une production sans porte d'entrée.
+  // Signale bruyamment une production sans porte d'entrée, sans pour autant
+  // empêcher le démarrage : voir assertAuthConfigured().
   assertAuthConfigured();
 
   syncCatalog()

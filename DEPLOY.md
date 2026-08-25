@@ -351,6 +351,8 @@ bouton qui ne marcherait pas.
 | Le QR code ne fait rien | Téléphone et ordinateur sur des réseaux différents | Mettez-les sur le **même Wi-Fi** |
 | Sur Railway : `SESSION_SECRET est obligatoire` | La variable manque | Ajoutez-la (voir [B2 étape 6](#b2-déployer-sur-railway-pas-à-pas)) |
 | Sur Railway : erreur de base de données | `DATABASE_URL` n'est pas reliée à PostgreSQL | Refaites l'étape 5 (Add Reference) |
+| `the URL must start with the protocol file:` | Le conteneur date d'avant le correctif du client Prisma | Redéployez : le client est désormais régénéré au démarrage |
+| `Application failed to respond` | Le serveur s'est arrêté au démarrage | Ouvrez **Deployments ▸ View Logs** : la vraie cause y est écrite en clair |
 | Sur Railway : `GOOGLE_CLIENT_ID est obligatoire` | La clé Google manque | Créez-la et ajoutez la variable ([B4](#b4-activer-la-connexion-google--obligatoire-en-production)) |
 
 ---
