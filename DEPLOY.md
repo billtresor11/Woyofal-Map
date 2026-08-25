@@ -180,16 +180,56 @@ C'est en ligne. Partagez l'adresse : elle s'ouvre sur n'importe quel téléphone
 | `DATABASE_URL` | Adresse de la base de données | **Oui** |
 | `SESSION_SECRET` | Signe les sessions (32 caractères minimum) | **Oui en production** |
 | `NODE_ENV` | `production` : cookies sécurisés, journaux compacts | **Oui en production** |
-| `GOOGLE_CLIENT_ID` | Active la connexion Google | Non — sans lui, l'app tourne sans compte |
+| `GOOGLE_CLIENT_ID` | Connexion Google | **Oui en production** — sans lui le serveur refuse de démarrer |
+| `ALLOW_ANONYMOUS` | Démonstration publique sans connexion | Non — à n'utiliser qu'en connaissance de cause |
 | `PORT` | Port d'écoute | Non (4000, ou celui de l'hébergeur) |
 | `HOST` | Interface d'écoute | Non (`0.0.0.0`) |
 | `WEB_ORIGIN` | Origines autorisées si le web est sur un autre domaine | Non |
 
-## B4. Activer la connexion Google *(facultatif)*
+## B4. Activer la connexion Google — **obligatoire en production**
 
-L'application fonctionne **sans compte** tant que `GOOGLE_CLIENT_ID` est vide. Pour
-l'activer, la marche à suivre complète est dans
-[`docs/AUTHENTIFICATION.md`](docs/AUTHENTIFICATION.md).
+Depuis la mise en place du verrou, **personne ne voit l'application sans être
+connecté** : ni les onglets, ni le tunnel d'accueil. Il faut donc une clé Google, sans
+quoi le serveur refuse de démarrer avec ce message :
+
+```
+GOOGLE_CLIENT_ID est obligatoire en production : sans lui, tous les foyers
+seraient accessibles sans connexion.
+```
+
+C'est volontaire : une panne visible au déploiement vaut mieux qu'une application
+silencieusement ouverte à tous.
+
+### Créer la clé (5 minutes, gratuit)
+
+1. Allez sur **https://console.cloud.google.com/apis/credentials**
+2. **Créer des identifiants ▸ ID client OAuth ▸ Application Web**
+3. Dans **Origines JavaScript autorisées**, ajoutez votre adresse de production :
+   `https://woyofal-map-production.up.railway.app` (et `http://localhost:4000` pour
+   travailler chez vous)
+4. Copiez l'**ID client** — il ressemble à `1234-abcd.apps.googleusercontent.com`
+5. Sur Railway : onglet **Variables ▸ New Variable**, nom `GOOGLE_CLIENT_ID`, collez la valeur
+
+> ⚠️ **Publiez l'écran de consentement OAuth** (menu *Écran de consentement OAuth* ▸
+> *Publier l'application*). Tant qu'il est en mode « Test », seuls les comptes que vous
+> avez listés à la main peuvent se connecter — les autres voient « accès bloqué ».
+
+Le **secret client** n'est pas nécessaire : l'application utilise le jeton d'identité
+côté navigateur, que le serveur vérifie contre les clés publiques de Google.
+
+### Et sur Vercel ?
+
+Vercel héberge des sites, pas des serveurs avec base de données : **il ne convient pas
+pour ce projet** tel qu'il est (voir [B1](#b1-quelle-plateforme-choisir)). Si vous
+tenez à y mettre uniquement l'interface web, il faudra alors renseigner
+`VITE_API_URL` (l'adresse publique de votre API) au moment de la compilation, et
+ajouter le domaine Vercel aux origines autorisées côté Google **et** dans
+`WEB_ORIGIN` côté serveur.
+
+### Sur mobile
+
+L'application native n'utilise pas la même clé : voir
+[C5](#c5-activer-la-connexion-google-sur-mobile-facultatif).
 
 ## B5. Sur n'importe quel autre hébergeur
 
@@ -301,7 +341,7 @@ eas submit --platform android
 
 Comptez aussi 25 $ une fois pour le compte Google Play.
 
-## C5. Activer la connexion Google sur mobile *(facultatif)*
+## C5. Activer la connexion Google sur mobile
 
 L'application native n'utilise pas le même identifiant que le web. Dans la console Google
 Cloud, créez **trois** identifiants OAuth, puis reportez-les dans `apps/mobile/app.json` :

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   AuthError,
   type GoogleVerifier,
+  anonymousAllowed,
   authEnabled,
   googleClientId,
   verifyGoogleCredential,
@@ -29,12 +30,15 @@ export function authRoutes(verify: GoogleVerifier = verifyGoogleCredential) {
     app.get('/api/auth/config', async () => ({
       googleEnabled: authEnabled(),
       googleClientId: googleClientId(),
+      anonymousAllowed: anonymousAllowed(),
     }));
 
     /** Qui suis-je ? Utilisé au démarrage pour retrouver une session ouverte. */
     app.get('/api/auth/me', async (request) => ({
       user: await currentUser(request),
       googleEnabled: authEnabled(),
+      /** Le seul cas où l'application a le droit d'entrer sans compte. */
+      anonymousAllowed: anonymousAllowed(),
     }));
 
     /**

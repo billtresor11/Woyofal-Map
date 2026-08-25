@@ -69,10 +69,13 @@ export default function Connexion() {
       .finally(() => setEnCours(false));
   }, [reponse, connecter]);
 
-  // Le serveur ne demande pas de compte : on entre directement.
+  // Une session déjà ouverte : on entre directement. On ne sort JAMAIS de cet
+  // écran sans utilisateur — sortir parce que le serveur n'est pas configuré
+  // renverrait vers l'aiguillage, qui renverrait ici : une boucle sans fin,
+  // et surtout une application ouverte à tous.
   useEffect(() => {
-    if (!googleActif || utilisateur) router.replace('/');
-  }, [googleActif, utilisateur]);
+    if (utilisateur) router.replace('/');
+  }, [utilisateur]);
 
   return (
     <View style={styles.fond}>

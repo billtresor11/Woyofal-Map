@@ -10,10 +10,12 @@ import { Chargement } from '../src/ui';
  *   connectée avec un foyer          → tableau de bord
  */
 export default function Entree() {
-  const { pret, googleActif, utilisateur, foyerId } = useFoyer();
+  const { pret, utilisateur, foyerId } = useFoyer();
 
   if (!pret) return <Chargement texte="Un instant…" />;
-  if (googleActif && !utilisateur) return <Redirect href="/connexion" />;
+  // Le test porte sur l'utilisateur seul, jamais sur la configuration du
+  // serveur : sinon un serveur mal configuré ouvrirait l'application à tous.
+  if (!utilisateur) return <Redirect href="/connexion" />;
   if (!foyerId) return <Redirect href="/bienvenue" />;
   return <Redirect href="/(tabs)" />;
 }

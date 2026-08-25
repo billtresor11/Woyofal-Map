@@ -1,5 +1,6 @@
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { useState } from 'react';
+import { STANDALONE } from './api/client.js';
 import { ErrorBanner, Spinner } from './components/ui.js';
 import { BottomBar, Sidebar, TABS, type TabId } from './components/Navigation.js';
 import { AppProvider, useApp } from './hooks/useApp.js';
@@ -26,7 +27,7 @@ import { SettingsSheet } from './screens/SettingsSheet.js';
  */
 function Shell() {
   const { householdId, summary, loading, error, refresh } = useApp();
-  const { user, googleEnabled, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const [tab, setTab] = useState<TabId>('inventaire');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -64,7 +65,7 @@ function Shell() {
         badges={badges}
         householdName={summary.household.name}
         onOpenSettings={() => setSettingsOpen(true)}
-        onLogout={googleEnabled && user ? signOut : undefined}
+        onLogout={user ? signOut : undefined}
         userName={user?.name ?? null}
       />
 
@@ -165,17 +166,40 @@ function DashboardTab({ onOpenSettings }: { onOpenSettings: () => void }) {
 }
 
 /**
- * Aiguillage d'entrée :
+ * Aiguillage d'entrée — LE VERROU DE L'APPLICATION.
+ *
  *   session en cours de vérification → attente
- *   personne connectée               → écran de connexion
+ *   personne non connectée           → écran de connexion, et rien d'autre
  *   connectée mais sans foyer        → tunnel d'accueil
  *   connectée avec un foyer          → tableau de bord
+ *
+ * La connexion est exigée AVANT tout : ni les onglets, ni le tunnel d'accueil,
+ * ni la moindre donnée de foyer ne sont montés tant qu'aucun compte n'est
+ * ouvert. Le test porte sur `user` seul — surtout pas sur `googleEnabled`, qui
+ * dépend de la configuration du serveur : un serveur mal configuré rendrait
+ * alors l'application publique sans que personne ne s'en aperçoive.
+ *
+ * L'écran de connexion sait dire, le cas échéant, que le serveur n'est pas
+ * configuré ; c'est une impasse honnête, pas une porte ouverte.
+ *
+ * Seule exception : la version de démonstration autonome, qui n'a pas de
+ * serveur du tout et garde ses données dans le navigateur.
  */
 function Gate() {
-  const { user, googleEnabled, loading } = useAuth();
+  const { user, anonymousAllowed, loading } = useAuth();
+
+  if (STANDALONE) {
+    return (
+      <AppProvider>
+        <Shell />
+      </AppProvider>
+    );
+  }
 
   if (loading) return <Spinner label="Un instant..." />;
-  if (googleEnabled && !user) return <LoginScreen />;
+  // `anonymousAllowed` vient du SERVEUR et ne vaut jamais true en production :
+  // c'est la seule porte dérobée, et elle se ferme toute seule au déploiement.
+  if (!user && !anonymousAllowed) return <LoginScreen />;
 
   return (
     <AppProvider>

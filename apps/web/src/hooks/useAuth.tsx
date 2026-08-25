@@ -27,6 +27,8 @@ interface AuthState {
   user: AuthUser | null;
   /** true si le serveur propose la connexion Google. */
   googleEnabled: boolean;
+  /** Le serveur tolère-t-il l'entrée sans compte ? (développement uniquement) */
+  anonymousAllowed: boolean;
   /** true tant que l'on ne sait pas encore si une session existe. */
   loading: boolean;
   error: string | null;
@@ -39,6 +41,7 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [anonymousAllowed, setAnonymousAllowed] = useState(false);
   const [loading, setLoading] = useState(!STANDALONE);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (annule) return;
         setUser(state.user);
         setGoogleEnabled(state.googleEnabled);
+        setAnonymousAllowed(state.anonymousAllowed === true);
       })
       .catch(() => {
         // Serveur injoignable : on laisse l'application se comporter comme
@@ -86,8 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ user, googleEnabled, loading, error, signInWithGoogle, signOut }),
-    [user, googleEnabled, loading, error, signInWithGoogle, signOut],
+    () => ({ user, googleEnabled, anonymousAllowed, loading, error, signInWithGoogle, signOut }),
+    [user, googleEnabled, anonymousAllowed, loading, error, signInWithGoogle, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

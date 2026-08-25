@@ -10,10 +10,15 @@ export interface AuthUser {
 export interface AuthState {
   user: AuthUser | null;
   googleEnabled: boolean;
+  /**
+   * Le serveur tolère-t-il l'entrée sans compte ? Seul le serveur en décide :
+   * hors production, ou sur une démonstration publique assumée.
+   */
+  anonymousAllowed: boolean;
 }
 
 /** L'utilisateur fictif du mode démonstration, où il n'y a pas de serveur. */
-const GUEST: AuthState = { user: null, googleEnabled: false };
+const GUEST: AuthState = { user: null, googleEnabled: false, anonymousAllowed: true };
 
 export const authApi = {
   session: (): Promise<AuthState> =>

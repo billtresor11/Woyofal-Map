@@ -13,6 +13,7 @@ import { authRoutes } from './routes/auth.routes.js';
 import { prisma } from './db.js';
 import { AppError } from './errors.js';
 import { applianceRoutes } from './routes/appliance.routes.js';
+import { assertAuthConfigured } from './auth/google.js';
 import { syncCatalog } from './services/catalog.sync.js';
 import { meterRoutes } from './routes/meter.routes.js';
 import { catalogRoutes } from './routes/catalog.routes.js';
@@ -96,6 +97,9 @@ if (isMain) {
    * ajout d'appareil. Le faire ici rend le déploiement infaillible — c'est
    * idempotent, et ça coûte quelques dizaines de millisecondes.
    */
+  // Refuse de démarrer une production sans porte d'entrée.
+  assertAuthConfigured();
+
   syncCatalog()
     .then(() => buildServer())
     .then((app) => app.listen({ port, host }))

@@ -442,10 +442,19 @@ Scannez le QR code avec **Expo Go**. Détails et pièges dans
 
 ### À propos de la connexion
 
-L'application fonctionne **sans compte** tant que la variable `GOOGLE_CLIENT_ID` est vide :
-c'est le mode par défaut, pratique pour développer et pour démontrer. Dès qu'elle est
-renseignée, la connexion Google devient obligatoire et chaque foyer est rattaché à son
-propriétaire. Voir [`docs/AUTHENTIFICATION.md`](docs/AUTHENTIFICATION.md).
+**En production, la connexion Google est obligatoire.** Rien n'est accessible sans compte :
+ni les onglets, ni le tunnel d'accueil. Le serveur refuse même de démarrer si
+`GOOGLE_CLIENT_ID` est absent — une panne visible au déploiement vaut mieux qu'une
+application silencieusement ouverte à tous.
+
+En développement, laisser la variable vide reste possible : l'application s'ouvre alors
+sans compte, ce qui évite d'avoir à configurer Google pour lancer le projet. C'est le
+serveur, et lui seul, qui accorde cette tolérance — le navigateur ne peut pas se
+l'octroyer.
+
+Chaque foyer est rattaché à l'identifiant Google de son propriétaire, et un foyer qui ne
+lui appartient pas est traité comme inexistant : répondre « interdit » révélerait qu'il
+existe. Voir [`docs/AUTHENTIFICATION.md`](docs/AUTHENTIFICATION.md).
 
 ---
 
