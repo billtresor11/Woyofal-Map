@@ -145,28 +145,10 @@ lit le `Dockerfile` déjà présent dans le projet — vous n'avez rien à confi
    Copiez le résultat. **Ne le partagez jamais** : il protège les sessions de vos
    utilisateurs.
 
-7. **Changez la base pour PostgreSQL** dans le code. Ouvrez le fichier
-   `apps/api/prisma/schema.prisma` et remplacez la ligne :
-
-   ```prisma
-   provider = "sqlite"
-   ```
-
-   par :
-
-   ```prisma
-   provider = "postgresql"
-   ```
-
-   Enregistrez, puis renvoyez sur GitHub :
-
-   ```bash
-   git add -A
-   git commit -m "Passage en PostgreSQL pour la production"
-   git push
-   ```
-
-   Railway redéploie tout seul. Les tables sont créées au premier démarrage.
+7. **Rien à changer dans le code.** Le type de base est déduit automatiquement de
+   `DATABASE_URL` : PostgreSQL en ligne, simple fichier sur votre ordinateur. C'est le
+   rôle de `scripts/prisma-schema.mjs`, qui tourne avant chaque commande Prisma. Les
+   tables sont créées au premier démarrage.
 
 8. **Obtenez votre adresse.** Onglet **Settings ▸ Networking ▸ Generate Domain**. Vous
    obtenez quelque chose comme `woyofal-map-production.up.railway.app`.
@@ -368,13 +350,15 @@ bouton qui ne marcherait pas.
 | L'app mobile affiche « Pas de connexion » | `apiUrl` pointe vers `localhost` | Mettez l'adresse réseau de votre ordinateur ([C2](#c2-dire-à-lapplication-où-trouver-le-serveur)) |
 | Le QR code ne fait rien | Téléphone et ordinateur sur des réseaux différents | Mettez-les sur le **même Wi-Fi** |
 | Sur Railway : `SESSION_SECRET est obligatoire` | La variable manque | Ajoutez-la (voir [B2 étape 6](#b2-déployer-sur-railway-pas-à-pas)) |
-| Sur Railway : erreur de base de données | Le schéma est resté en `sqlite` | Passez-le en `postgresql` ([B2 étape 7](#b2-déployer-sur-railway-pas-à-pas)) |
+| Sur Railway : erreur de base de données | `DATABASE_URL` n'est pas reliée à PostgreSQL | Refaites l'étape 5 (Add Reference) |
+| Sur Railway : `GOOGLE_CLIENT_ID est obligatoire` | La clé Google manque | Créez-la et ajoutez la variable ([B4](#b4-activer-la-connexion-google--obligatoire-en-production)) |
 
 ---
 
 # Avant la vraie mise en ligne : la liste de contrôle
 
-- [ ] `provider = "postgresql"` dans `apps/api/prisma/schema.prisma`
+- [ ] `DATABASE_URL` pointe bien vers PostgreSQL (le schéma s'y adapte tout seul)
+- [ ] `GOOGLE_CLIENT_ID` renseigné — sans lui le serveur refuse de démarrer
 - [ ] `SESSION_SECRET` généré au hasard, différent de celui de développement
 - [ ] `NODE_ENV=production`
 - [ ] Les prix du kWh vérifiés sur un reçu Woyofal récent (⚙️ *Réglages ▸ Le prix du kWh*)

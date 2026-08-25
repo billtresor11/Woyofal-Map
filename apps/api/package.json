@@ -6,15 +6,16 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "prebuild": "prisma generate",
+    "prebuild": "node ../../scripts/prisma-schema.mjs && prisma generate --schema prisma/schema.runtime.prisma",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "pretypecheck": "prisma generate",
+    "pretypecheck": "node ../../scripts/prisma-schema.mjs && prisma generate --schema prisma/schema.runtime.prisma",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:push": "prisma db push --skip-generate && prisma generate",
+    "db:push": "node ../../scripts/prisma-schema.mjs && prisma db push --skip-generate --schema prisma/schema.runtime.prisma && prisma generate --schema prisma/schema.runtime.prisma",
     "db:seed": "tsx src/seed.ts",
-    "db:studio": "prisma studio",
-    "test": "vitest run"
+    "db:studio": "node ../../scripts/prisma-schema.mjs && prisma studio --schema prisma/schema.runtime.prisma",
+    "test": "vitest run",
+    "prisma:schema": "node ../../scripts/prisma-schema.mjs"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

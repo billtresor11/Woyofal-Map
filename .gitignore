@@ -15,3 +15,6 @@ demo/woyofal-map-fragment.html
 apps/web/dist-demo/
 apps/web/dist-dbg/
 apps/api/prisma/test.db*
+
+# Schéma Prisma dérivé, régénéré à chaque commande (scripts/prisma-schema.mjs)
+apps/api/prisma/schema.runtime.prisma

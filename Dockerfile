@@ -39,7 +39,10 @@ RUN npm ci \
       --include-workspace-root
 
 COPY . .
-RUN npx prisma generate --schema apps/api/prisma/schema.prisma \
+# Le schéma est adapté au type de base indiqué par DATABASE_URL (PostgreSQL en
+# production, fichier local en développement) : plus rien à éditer à la main.
+RUN node scripts/prisma-schema.mjs \
+    && npx prisma generate --schema apps/api/prisma/schema.runtime.prisma \
     && npm run build
 
 # --- Étape 2 : exécution ---------------------------------------------------
@@ -60,10 +63,13 @@ COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/web/dist ./apps/web/dist
+# Le script d'adaptation du schéma tourne aussi au DÉMARRAGE (voir CMD) :
+# sans lui dans l'image finale, le conteneur ne démarrerait pas.
+COPY --from=build /app/scripts/prisma-schema.mjs ./scripts/prisma-schema.mjs
 
 EXPOSE 4000
 
 # Le schéma est appliqué à la base au démarrage, puis le serveur se lance.
 # `db push` est idempotent : au premier démarrage il crée les tables, ensuite
 # il ne fait rien. Le catalogue, lui, est recopié par le serveur lui-même.
-CMD ["sh", "-c", "npx prisma db push --schema apps/api/prisma/schema.prisma --skip-generate --accept-data-loss && node apps/api/dist/server.js"]
+CMD ["sh", "-c", "node scripts/prisma-schema.mjs && npx prisma db push --schema apps/api/prisma/schema.runtime.prisma --skip-generate --accept-data-loss && node apps/api/dist/server.js"]
