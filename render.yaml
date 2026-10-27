@@ -1,0 +1,19 @@
+# Blueprint Render : crée le service web à partir du Dockerfile.
+# La base de données PostgreSQL est hébergée ailleurs (Neon) : DATABASE_URL
+# est donc saisie à la main dans le tableau de bord Render (sync: false).
+services:
+  - type: web
+    name: woyofal-map
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false

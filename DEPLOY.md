@@ -155,6 +155,37 @@ lit le `Dockerfile` déjà présent dans le projet — vous n'avez rien à confi
 
 C'est en ligne. Partagez l'adresse : elle s'ouvre sur n'importe quel téléphone.
 
+## B2-bis. Alternative gratuite si Railway est devenu payant : Render + Neon
+
+Railway a réduit son offre gratuite. Combinaison sans carte bancaire (vérifiez les
+limites actuelles sur les sites eux-mêmes, elles changent) :
+
+- **Neon** héberge la base PostgreSQL (offre gratuite permanente).
+- **Render** héberge l'application via le `Dockerfile` (fichier `render.yaml` fourni).
+
+> ⚠️ Ne prenez **pas** la base PostgreSQL gratuite de Render : elle expire après
+> quelques semaines. C'est pourquoi la base est chez Neon.
+> Sur l'offre gratuite, Render endort le serveur après 15 min sans visite : la première
+> personne attend environ une minute.
+
+**1. La base de données (Neon)**
+
+1. Créez un compte sur **https://neon.tech** (« Sign in with GitHub »).
+2. Créez un projet. Choisissez la région la plus proche (Europe, Frankfurt).
+3. Dans **Connect**, **désactivez** l'option « Connection pooling » et copiez l'adresse
+   qui commence par `postgresql://`. Elle doit se terminer par `?sslmode=require`.
+   C'est votre `DATABASE_URL`.
+
+**2. Le serveur (Render)**
+
+1. Créez un compte sur **https://render.com** (« Sign in with GitHub »).
+2. **New ▸ Blueprint**, choisissez le dépôt `Woyofal-Map`. Render lit `render.yaml`.
+3. Renseignez les deux variables demandées : `DATABASE_URL` (celle de Neon) et
+   `GOOGLE_CLIENT_ID` (voir B4). `SESSION_SECRET` est généré automatiquement.
+4. Cliquez **Apply**. La première construction dure 5 à 10 minutes.
+5. Votre adresse est du type `https://woyofal-map.onrender.com`. Ajoutez-la dans les
+   **origines JavaScript autorisées** de la clé Google (B4).
+
 ## B3. Toutes les variables d'environnement
 
 | Variable | À quoi ça sert | Obligatoire ? |
